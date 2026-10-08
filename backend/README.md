@@ -22,6 +22,6 @@ bin/rails server   # http://localhost:3000
 ## Test and lint
 
 ```sh
-bin/rails test
+bundle exec rspec
 bin/rubocop
 ```
