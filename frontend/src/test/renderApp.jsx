@@ -7,8 +7,8 @@ import { AuthProvider } from '../auth/AuthProvider.jsx'
 // Renders the UI inside the same providers as main.jsx, with an in-memory router.
 export function renderApp(ui, { route = '/' } = {}) {
   return render(
-    <MantineProvider>
-      <QueryClientProvider client={new QueryClient()}>
+    <MantineProvider env="test">
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <MemoryRouter initialEntries={[route]}>
           <AuthProvider>{ui}</AuthProvider>
         </MemoryRouter>

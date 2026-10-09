@@ -11,7 +11,12 @@ import App from './App.jsx'
 import { AuthProvider } from './auth/AuthProvider.jsx'
 import { theme } from './theme.js'
 
-const queryClient = new QueryClient()
+// Retry once for an unreachable server or a 5xx. A 4xx will not change on retry.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: (failureCount, error) => failureCount < 1 && (error.status === 0 || error.status >= 500) },
+  },
+})
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
