@@ -168,10 +168,10 @@ Bad credentials return 401 `unauthorized`.
 
 | Param | Values | Default |
 |---|---|---|
-| `status` | `active`, `terminated` | `active` |
+| `status` | `active`, `terminated`, `all` (both together) | `active` |
 | `q` | Text, matched case-insensitively against name, email and employee code | none |
 | `country`, `department`, `level` | Enum slug | none, combinable |
-| `sort` | `full_name`, `salary`, `hire_date`, plus `terminated_on` when `status=terminated` | `full_name` |
+| `sort` | `full_name`, `salary`, `hire_date`, plus `terminated_on` when `status` is `terminated` or `all` (active rows have no termination date and sort first) | `full_name` |
 | `direction` | `asc`, `desc` | `asc` |
 | `page` | Integer greater than or equal to 1 | `1` |
 | `per_page` | 1 to 100 | `25` |

@@ -7,11 +7,16 @@ module Api
       before_action :set_employee, only: %i[show update terminate]
       before_action :reject_terminated, only: %i[update terminate]
 
+      rescue_from EmployeeSearch::InvalidParam do |exception|
+        render_error(code: "invalid_param", message: "Invalid search parameters",
+                     status: :unprocessable_content, details: exception.details)
+      end
+
       def index
         page, per_page = pagination_params
         return unless page
 
-        employees = Employee.order(:full_name, :id).page(page).per(per_page)
+        employees = EmployeeSearch.new(search_params).call.page(page).per(per_page)
         render json: {
           data: EmployeeSerializer.new(employees).to_h,
           meta: { page: employees.current_page, per_page: employees.limit_value,
@@ -68,6 +73,10 @@ module Api
       def employee_params
         params.require(:employee).permit(:full_name, :email, :gender, :job_title, :department,
                                          :level, :country, :hire_date, :salary)
+      end
+
+      def search_params
+        params.permit(:status, :q, :country, :department, :level, :sort, :direction)
       end
 
       # Renders a 422 and returns nil when page or per_page is invalid.

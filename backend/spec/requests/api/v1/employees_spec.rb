@@ -106,6 +106,66 @@ RSpec.describe "Employees", type: :request do
     end
   end
 
+  describe "GET /api/v1/employees search, filter and sort" do
+    let!(:priya) { create(:employee, full_name: "Priya Sharma", country: "india", level: "senior", salary: 40_000) }
+    let!(:john) { create(:employee, full_name: "John Smith", country: "united_states", level: "junior", salary: 90_000) }
+    let!(:gone) do
+      create(:employee, full_name: "Gone Person", hire_date: Date.new(2020, 1, 1)).tap do |employee|
+        employee.update_columns(deleted_at: Time.zone.local(2026, 9, 1))
+      end
+    end
+
+    def listed_names
+      response.parsed_body["data"].map { |e| e["full_name"] }
+    end
+
+    it "searches with q" do
+      get "/api/v1/employees", params: { q: "smith" }, headers: headers
+
+      expect(listed_names).to eq([ "John Smith" ])
+      expect(response.parsed_body["meta"]["total_count"]).to eq(1)
+    end
+
+    it "combines filters" do
+      get "/api/v1/employees", params: { country: "india", level: "senior" }, headers: headers
+
+      expect(listed_names).to eq([ "Priya Sharma" ])
+    end
+
+    it "sorts by salary descending" do
+      get "/api/v1/employees", params: { sort: "salary", direction: "desc" }, headers: headers
+
+      expect(listed_names).to eq([ "John Smith", "Priya Sharma" ])
+    end
+
+    it "lists terminated employees with status=terminated" do
+      get "/api/v1/employees", params: { status: "terminated", sort: "terminated_on" }, headers: headers
+
+      expect(listed_names).to eq([ "Gone Person" ])
+      expect(response.parsed_body["data"].first["terminated_on"]).to eq("2026-09-01")
+    end
+
+    it "lists active and terminated employees together with status=all" do
+      get "/api/v1/employees", params: { status: "all" }, headers: headers
+
+      expect(listed_names).to contain_exactly("Priya Sharma", "John Smith", "Gone Person")
+    end
+
+    it "paginates the filtered result" do
+      get "/api/v1/employees", params: { country: "india", per_page: 1 }, headers: headers
+
+      expect(response.parsed_body["meta"]).to include("total_count" => 1, "total_pages" => 1)
+    end
+
+    it "returns 422 invalid_param naming every bad param" do
+      get "/api/v1/employees", params: { country: "atlantis", sort: "email" }, headers: headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(error["code"]).to eq("invalid_param")
+      expect(error["details"].keys).to contain_exactly("country", "sort")
+    end
+  end
+
   describe "GET /api/v1/employees/:id" do
     it "returns an active employee" do
       employee = create(:employee, full_name: "Priya Sharma")
