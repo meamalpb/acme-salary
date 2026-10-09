@@ -13,6 +13,8 @@ Rails.application.routes.draw do
       post "login", to: "sessions#create"
       delete "logout", to: "sessions#destroy"
 
+      get "meta", to: "meta#show"
+
       resources :employees, only: %i[index show create update] do
         post :terminate, on: :member
       end

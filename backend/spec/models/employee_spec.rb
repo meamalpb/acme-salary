@@ -146,4 +146,28 @@ RSpec.describe Employee, type: :model do
       expect(record.reload.salary).to eq(38_500)
     end
   end
+
+  describe ".options_for" do
+    it "returns value and label pairs in declaration order" do
+      expect(Employee.options_for(:level)).to eq([
+        { value: "junior", label: "Junior" }, { value: "mid", label: "Mid" },
+        { value: "senior", label: "Senior" }, { value: "lead", label: "Lead" },
+        { value: "principal", label: "Principal" }
+      ])
+    end
+
+    it "uses readable labels for multi-word and acronym slugs" do
+      expect(Employee.options_for(:country)).to include({ value: "united_states", label: "United States" })
+      expect(Employee.options_for(:department)).to include({ value: "hr", label: "HR" })
+      expect(Employee.options_for(:gender)).to include(
+        { value: "non_binary", label: "Non-binary" }, { value: "prefer_not_to_say", label: "Prefer not to say" }
+      )
+    end
+  end
+
+  describe ".label_for" do
+    it "returns the label for a slug" do
+      expect(Employee.label_for(:country, "united_kingdom")).to eq("United Kingdom")
+    end
+  end
 end

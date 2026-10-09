@@ -1,6 +1,9 @@
 class Employee < ApplicationRecord
   TERMINATED_MESSAGE = "Terminated employees are read-only".freeze
 
+  # Slugs that humanize + titleize would render badly.
+  LABEL_OVERRIDES = { "hr" => "HR", "non_binary" => "Non-binary", "prefer_not_to_say" => "Prefer not to say" }.freeze
+
   # deleted_at is the termination date. Default scope hides terminated rows;
   acts_as_paranoid
 
@@ -39,6 +42,15 @@ class Employee < ApplicationRecord
     non_binary: "non_binary",
     prefer_not_to_say: "prefer_not_to_say"
   }, prefix: true, validate: true
+
+  # Value and label pairs for a fixed list, in declaration order.
+  def self.options_for(attribute)
+    defined_enums.fetch(attribute.to_s).keys.map { |value| { value: value, label: label_for(attribute, value) } }
+  end
+
+  def self.label_for(_attribute, value)
+    LABEL_OVERRIDES.fetch(value.to_s) { value.to_s.titleize }
+  end
 
   before_validation :normalize_email
 
