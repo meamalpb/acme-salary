@@ -1,4 +1,4 @@
-import { Alert, Avatar, Badge, Box, Button, Group, Skeleton, Stack, Table, Text, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Alert, Avatar, Badge, Box, Button, Group, Skeleton, Stack, Table, Text, UnstyledButton } from '@mantine/core'
 import { formatDate, formatSalary, initialsFromName, labelFor } from '../format.js'
 
 // Level badge colours, from the design. Darker means more senior.
@@ -10,7 +10,7 @@ const LEVEL_COLORS = {
   principal: { background: '#0E6E62', color: '#FFFFFF' },
 }
 
-const COLUMN_COUNT = 6
+const COLUMN_COUNT = 7
 
 function SortableHeader({ label, column, sort, direction, onSort, align }) {
   const active = sort === column
@@ -59,6 +59,7 @@ export default function EmployeeTable({
   onSort,
   onRetry,
   onClearFilters,
+  onEdit,
 }) {
   return (
     <Table.ScrollContainer minWidth={960}>
@@ -71,6 +72,11 @@ export default function EmployeeTable({
             <Table.Th>Country</Table.Th>
             <SortableHeader label="Hired" column="hire_date" sort={sort} direction={direction} onSort={onSort} />
             <SortableHeader label="Salary" column="salary" sort={sort} direction={direction} onSort={onSort} align="right" />
+            <Table.Th w={48}>
+              <Box component="span" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
+                Actions
+              </Box>
+            </Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -127,6 +133,14 @@ export default function EmployeeTable({
               <Table.Td c="gray.7">{formatDate(employee.hire_date)}</Table.Td>
               <Table.Td ta="right" fw={600} style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {formatSalary(employee.salary)}
+              </Table.Td>
+              <Table.Td>
+                <ActionIcon variant="subtle" color="brand" size={34} aria-label={`Edit ${employee.full_name}`} onClick={() => onEdit(employee)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 20h4l10.5-10.5a2.83 2.83 0 1 0-4-4L4 16v4" />
+                    <path d="M13.5 6.5l4 4" />
+                  </svg>
+                </ActionIcon>
               </Table.Td>
             </Table.Tr>
           ))}

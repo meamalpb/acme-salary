@@ -1,4 +1,6 @@
-import { Box, Group, Pagination, Paper, Select, Stack, Text, Title } from '@mantine/core'
+import { useState } from 'react'
+import { Box, Button, Group, Pagination, Paper, Select, Stack, Text, Title } from '@mantine/core'
+import EmployeeFormModal from '../components/EmployeeFormModal.jsx'
 import EmployeeFilters from '../components/EmployeeFilters.jsx'
 import EmployeeTable from '../components/EmployeeTable.jsx'
 import StatusTabs from '../components/StatusTabs.jsx'
@@ -12,6 +14,8 @@ export default function EmployeesPage() {
   const list = useEmployees(params)
   const activeCount = useStatusCount('active')
   const terminatedCount = useStatusCount('terminated')
+  // null = closed, 'new' = adding, an employee = editing that employee.
+  const [editing, setEditing] = useState(null)
 
   const rows = list.data?.data ?? []
   const listMeta = list.data?.meta
@@ -26,12 +30,15 @@ export default function EmployeesPage() {
 
   return (
     <Stack gap="md">
-      <Box>
-        <Title order={1} fz={26}>
-          Employees
-        </Title>
-        <Text c="dimmed">Salaries in USD</Text>
-      </Box>
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title order={1} fz={26}>
+            Employees
+          </Title>
+          <Text c="dimmed">Salaries in USD</Text>
+        </Box>
+        <Button onClick={() => setEditing('new')}>Add employee</Button>
+      </Group>
 
       <StatusTabs activeCount={activeCount.data} terminatedCount={terminatedCount.data} />
 
@@ -50,6 +57,7 @@ export default function EmployeesPage() {
           onSort={handleSort}
           onRetry={() => list.refetch()}
           onClearFilters={clearFilters}
+          onEdit={setEditing}
         />
         {list.isPending && (
           <Text role="status" c="dimmed" p="md">
@@ -76,6 +84,7 @@ export default function EmployeesPage() {
           </Group>
         )}
       </Paper>
+      {editing && <EmployeeFormModal employee={editing === 'new' ? null : editing} meta={meta} onClose={() => setEditing(null)} />}
     </Stack>
   )
 }

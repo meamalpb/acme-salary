@@ -8,7 +8,7 @@ import * as metaApi from '../api/meta.js'
 import { renderApp } from '../test/renderApp.jsx'
 import EmployeesPage from './EmployeesPage.jsx'
 
-vi.mock('../api/employees.js', () => ({ listEmployees: vi.fn() }))
+vi.mock('../api/employees.js', () => ({ listEmployees: vi.fn(), createEmployee: vi.fn(), updateEmployee: vi.fn() }))
 vi.mock('../api/meta.js', () => ({ getMeta: vi.fn() }))
 vi.mock('../api/auth.js', () => ({ login: vi.fn(), logout: vi.fn() }))
 
@@ -25,7 +25,10 @@ const meta = {
     { value: 'junior', label: 'Junior' },
     { value: 'senior', label: 'Senior' },
   ],
-  genders: [],
+  genders: [
+    { value: 'female', label: 'Female' },
+    { value: 'male', label: 'Male' },
+  ],
 }
 
 const priya = {
@@ -164,5 +167,34 @@ describe('EmployeesPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
 
     await waitFor(() => expect(screen.getByTestId('search')).toBeEmptyDOMElement())
+  })
+
+  it('opens an empty Add employee modal from the header button', async () => {
+    renderList()
+    await screen.findByText('Priya Raman')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Add employee' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('Add employee')).toBeInTheDocument()
+    expect(within(dialog).getByLabelText('Full name')).toHaveValue('')
+  })
+
+  it('edits a row, closes the modal and refreshes the list', async () => {
+    employeesApi.updateEmployee.mockResolvedValue({ ...priya, salary: 180000 })
+    renderList()
+    await screen.findByText('Priya Raman')
+    const listCallsBefore = employeesApi.listEmployees.mock.calls.length
+
+    await userEvent.click(screen.getByRole('button', { name: 'Edit Priya Raman' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByLabelText('Full name')).toHaveValue('Priya Raman')
+    await userEvent.clear(within(dialog).getByLabelText('Annual salary'))
+    await userEvent.type(within(dialog).getByLabelText('Annual salary'), '180000')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(employeesApi.updateEmployee).toHaveBeenCalledWith(1, expect.objectContaining({ salary: 180000 }))
+    await waitFor(() => expect(employeesApi.listEmployees.mock.calls.length).toBeGreaterThan(listCallsBefore))
   })
 })

@@ -4,3 +4,11 @@ import { request } from './client.js'
 export function listEmployees(params) {
   return request('/api/v1/employees', { params })
 }
+
+export function createEmployee(fields) {
+  return request('/api/v1/employees', { method: 'POST', body: { employee: fields } })
+}
+
+export function updateEmployee(id, fields) {
+  return request(`/api/v1/employees/${id}`, { method: 'PATCH', body: { employee: fields } })
+}
