@@ -1,4 +1,6 @@
 class Employee < ApplicationRecord
+  TERMINATED_MESSAGE = "Terminated employees are read-only".freeze
+
   # deleted_at is the termination date. Default scope hides terminated rows;
   acts_as_paranoid
 
@@ -48,8 +50,13 @@ class Employee < ApplicationRecord
   validates :salary, presence: true,
                      numericality: { only_integer: true, greater_than: 0, allow_nil: true }
   validate :hire_date_not_in_future
+  validate :not_terminated, on: :update
 
   private
+
+  def not_terminated
+    errors.add(:base, TERMINATED_MESSAGE) if deleted_at_in_database.present?
+  end
 
   def normalize_email
     self.email = email.to_s.strip.downcase.presence

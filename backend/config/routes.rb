@@ -12,6 +12,10 @@ Rails.application.routes.draw do
     namespace :v1 do
       post "login", to: "sessions#create"
       delete "logout", to: "sessions#destroy"
+
+      resources :employees, only: %i[index show create update] do
+        post :terminate, on: :member
+      end
     end
   end
 end

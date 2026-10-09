@@ -132,4 +132,18 @@ RSpec.describe Employee, type: :model do
       expect(Employee.with_deleted).to contain_exactly(active, terminated)
     end
   end
+
+  describe "read-only once terminated" do
+    let(:terminated) do
+      create(:employee).tap { |employee| employee.update_columns(deleted_at: Time.zone.local(2026, 9, 1)) }
+    end
+
+    it "rejects updates" do
+      record = Employee.with_deleted.find(terminated.id)
+
+      expect(record.update(salary: 99_000)).to be(false)
+      expect(record.errors[:base]).to include("Terminated employees are read-only")
+      expect(record.reload.salary).to eq(38_500)
+    end
+  end
 end
