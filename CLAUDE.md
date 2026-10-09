@@ -43,7 +43,7 @@ bin/rails server          # http://localhost:3000
 - **Thin controllers** under `Api::V1::`. Routes are prefixed with `/api/v1`.
 - **Models** hold validations, enums and simple scopes.
 - **Query objects** (`app/queries/`) handle search, filter and sort for the employee list.
-- **Services** (`app/services/`) handle multi-step operations: terminating an employee, CSV export, metrics.
+- **Services** (`app/services/`) handle multi-step operations: terminating an employee, CSV export, insights.
 - **Serializers** (`app/serializers/`) are Alba resources. They are the only place that decides JSON shape.
 - **Fixed lists** (country, department, level, gender) are string-backed Rails enums, so the DB stores readable values.
 - **Money:** `salary` is an integer of whole USD. Never use floats.

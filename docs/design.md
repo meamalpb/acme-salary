@@ -71,7 +71,7 @@ Each index is tied to a query we actually run.
 | unique `employee_code` | lookup and search by code |
 | unique `email` | uniqueness validation |
 | `deleted_at` | active vs. terminated list on every request |
-| `country` | list filter and metrics grouping |
+| `country` | list filter and insights grouping |
 | `(country, salary)` | per-country median and top-paid |
 
 Not indexed up front: `department` and `level` (low cardinality, so an index helps little at 10k rows) and the search columns. Search uses `LIKE '%q%'`, which can't use a B-tree index at all, and at 10k rows it's a fast scan. The performance slice verifies this with `EXPLAIN QUERY PLAN` and records the numbers, and an index is added only if the data justifies it.
@@ -195,9 +195,20 @@ Ordering always ends with `id` as a tiebreaker, so pagination is stable.
   "genders":     [ ... ] }
 ```
 
-### 2.5 Metrics (provisional)
+### 2.5 Insights
 
-`GET /api/v1/metrics/countries` returns one row per country with `headcount`, `median_salary`, `total_payroll`, and `top_paid` (employee id, name, level and salary). It counts **active employees only**. The median is computed in SQL with window functions. The exact shape and any filters are settled when this slice is built, and this section is updated then.
+`GET /api/v1/insights/countries` returns one row per country that has active employees, sorted by country. It counts **active employees only** and takes no filters in v1.
+
+```json
+{ "data": [
+  { "country": "india", "headcount": 2300, "median_salary": 41200, "total_payroll": 98760000,
+    "top_paid": { "id": 42, "full_name": "Priya Sharma", "level": "principal", "salary": 95000 } }
+] }
+```
+
+- `median_salary` is the middle salary, or the mean of the two middle salaries for an even headcount, rounded to whole USD. It is computed in SQL with window functions (`SalaryInsightsByCountry`).
+- `top_paid` ties go to the lowest id, so the result is deterministic.
+- Countries with no active employees are omitted. `country` is the enum slug, so the frontend maps it to a label through `/meta`.
 
 ## 3. Code layout
 
@@ -205,7 +216,7 @@ Ordering always ends with `id` as a tiebreaker, so pagination is stable.
 app/
   controllers/api/v1/   # thin: auth, params, render
   models/               # Employee, User, JwtDenylist: validations, enums, scopes
-  queries/              # EmployeeSearch (search, filter, sort); SalaryMetricsByCountry
+  queries/              # EmployeeSearch (search, filter, sort); SalaryInsightsByCountry
   services/             # TerminateEmployee, CreateEmployee (code generation), EmployeeCsvExport
   serializers/          # Alba resources: EmployeeSerializer, ...
 db/seeds.rb             # deterministic: 10k employees and HR users
@@ -257,7 +268,7 @@ Each slice follows tests first, then a migration made with the generator, then t
 6. **Terminate:** the service, the read-only rule, and `status=terminated` on the list.
 7. **Meta and CSV export.**
 8. **Seed script:** 10k employees, timed, with a spec for the salary generator.
-9. **Metrics:** SQL median and the endpoint. Finalise 2.5.
+9. **Insights:** SQL median and the endpoint. Finalise 2.5.
 10. **Performance pass and README:** `EXPLAIN` results, timings, run and deploy notes.
 
 ## 6. Notes for later phases

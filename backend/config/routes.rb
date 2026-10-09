@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       delete "logout", to: "sessions#destroy"
 
       get "meta", to: "meta#show"
+      get "insights/countries", to: "insights#countries"
 
       resources :employees, only: %i[index show create update] do
         get :export, on: :collection
