@@ -24,6 +24,12 @@ module Api
         }
       end
 
+      def export
+        include_terminated = search_params[:status].in?(%w[terminated all])
+        csv = ExportEmployeesCsv.call(EmployeeSearch.new(search_params).call, include_terminated: include_terminated)
+        send_data csv, type: "text/csv", filename: "employees-#{Date.current.iso8601}.csv"
+      end
+
       def show
         render json: EmployeeSerializer.new(@employee).to_h
       end

@@ -342,4 +342,60 @@ RSpec.describe "Employees", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "GET /api/v1/employees/export" do
+    def export_lines = response.body.split("\r\n")
+
+    it "requires a token" do
+      get "/api/v1/employees/export"
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "returns every matching row as a CSV attachment, ignoring pagination" do
+      create_list(:employee, 3, country: "india")
+      create(:employee, country: "germany")
+
+      get "/api/v1/employees/export", params: { country: "india", per_page: 1, page: 2 }, headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq "text/csv"
+      expect(response.headers["Content-Disposition"]).to include('filename="employees-2026-10-09.csv"')
+      expect(export_lines.size).to eq 4
+      expect(export_lines.drop(1)).to all(include(",india,"))
+    end
+
+    it "applies search and sort" do
+      create(:employee, full_name: "Zed", salary: 10_000)
+      create(:employee, full_name: "Amy", salary: 20_000)
+
+      get "/api/v1/employees/export", params: { sort: "salary", direction: "desc" }, headers: headers
+
+      expect(export_lines.drop(1).map { |line| line.split(",")[1] }).to eq %w[Amy Zed]
+    end
+
+    it "includes terminated_on for the terminated view" do
+      create(:employee, deleted_at: Time.zone.local(2026, 5, 1, 9))
+
+      get "/api/v1/employees/export", params: { status: "terminated" }, headers: headers
+
+      expect(export_lines.first).to end_with(",terminated_on")
+      expect(export_lines.last).to end_with(",2026-05-01")
+    end
+
+    it "omits terminated_on for the active view" do
+      create(:employee)
+
+      get "/api/v1/employees/export", headers: headers
+
+      expect(export_lines.first).not_to include("terminated_on")
+    end
+
+    it "returns the 422 error shape for invalid params" do
+      get "/api/v1/employees/export", params: { country: "atlantis" }, headers: headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(error["code"]).to eq "invalid_param"
+      expect(error["details"]).to have_key("country")
+    end
+  end
 end

@@ -16,6 +16,7 @@ Rails.application.routes.draw do
       get "meta", to: "meta#show"
 
       resources :employees, only: %i[index show create update] do
+        get :export, on: :collection
         post :terminate, on: :member
       end
     end
