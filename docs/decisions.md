@@ -21,10 +21,15 @@ These decisions came out of a structured "grill" session before any code was wri
 | 15 | **Kaminari** for pagination | Pagy | Developer familiarity. |
 | 16 | **Alba** for serialization | Plain Ruby serializers; jbuilder; `as_json` | Declarative and well maintained. Handles collections, and camelCase keys for the React frontend are a one-line option. |
 | 17 | Salary is stored as **whole-dollar integer** | Decimal; integer cents | Annual salaries are set in whole dollars. An integer avoids float errors and keeps the API simple. |
+| 18 | Frontend is **plain JavaScript** | TypeScript | Keeps the existing Vite scaffold and avoids setup cost. API shapes are documented instead of typed. |
+| 19 | **Mantine** for UI components | MUI; Tailwind + headless primitives; plain CSS | Ships Drawer, Table, Select, DateInput, notifications and form hooks, which cover almost every screen. |
+| 20 | **TanStack Query** with a thin fetch wrapper for server state | `useEffect` + fetch; SWR | Handles stale responses, keeping the previous page visible while the next loads, and refreshing the list after writes. Simple to learn for someone who knows `useEffect`. |
+| 21 | **React Router v7**, with filters, sort and page as `useSearchParams` | TanStack Router; hand-rolled history API | The URL is the single source of truth, so views can be bookmarked and shared. |
+| 22 | JWT stored in **localStorage**. Any 401 clears it and redirects to login. | sessionStorage; memory only | The HR manager stays logged in across browser restarts. Trade-off: the token persists on a shared machine until it expires, and is exposed to XSS. |
+| 23 | **Vitest + React Testing Library**, mocking our `api` module. About 5-8 tests on critical flows only. | MSW; no tests; Playwright e2e | Light, fast and deterministic. Keeps the "every slice ends with passing tests" rule without heavy setup. |
 
 ## Open items
 
 - **Insights screen design** is parked until its slice. The three metrics are in v1 scope.
 - **Gender values** are proposed as `female`, `male`, `non_binary`, `prefer_not_to_say`.
-- **Frontend tooling** (TypeScript, component library, data fetching) will be decided when frontend work starts.
 - **Deployment host** to be decided.
