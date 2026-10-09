@@ -51,7 +51,7 @@ erDiagram
 | `level` | string | not null | Enum. |
 | `country` | string | not null | Enum. |
 | `hire_date` | date | not null | Not in the future. |
-| `salary` | integer | not null | Annual, whole USD, greater than 0 and at most 10,000,000. No floats. |
+| `salary` | integer | not null | Annual, whole USD, greater than 0. No floats. |
 | `deleted_at` | datetime | nullable | paranoia. `NULL` means active; a value is the termination date. |
 
 **Validations (model):** presence of all columns above, email format and uniqueness, `salary` integer range, `hire_date` not in the future, inclusion of the enum values.
