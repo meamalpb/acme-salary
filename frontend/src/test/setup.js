@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
 
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+  localStorage.clear()
+})
 
 // Mantine reads these browser APIs, which jsdom doesn't provide.
 window.matchMedia ??= (query) => ({
