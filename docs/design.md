@@ -273,5 +273,5 @@ Each slice follows tests first, then a migration made with the generator, then t
 
 ## 6. Notes for later phases
 
-- **CORS:** the React app on another origin needs `rack-cors`, with `Authorization` exposed in responses. That's a new gem, so it's raised at the start of frontend work.
+- **CORS:** `rack-cors` is configured in `config/initializers/cors.rb`.
 - **Downloading the CSV** needs the auth header, so the frontend fetches it as a blob rather than using a plain link.
