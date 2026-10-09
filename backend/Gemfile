@@ -35,6 +35,10 @@ gem "kaminari", "~> 1.2"
 
 gem "alba", "~> 4.0"
 
+gem "devise", "~> 5.0"
+
+gem "devise-jwt", "~> 0.13"
+
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 # gem "rack-cors"
 
