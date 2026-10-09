@@ -209,6 +209,7 @@ app/
   services/             # TerminateEmployee, CreateEmployee (code generation), EmployeeCsvExport
   serializers/          # Alba resources: EmployeeSerializer, ...
 db/seeds.rb             # deterministic: 10k employees and HR users
+db/seeds/employee_generator.rb  # builds the seed rows; specced in spec/seeds/
 ```
 
 ## 4. Seed data
@@ -235,6 +236,14 @@ db/seeds.rb             # deterministic: 10k employees and HR users
 | brazil | 0.40 | 5% |
 
 Departments are weighted too (for example, Engineering and Sales are the largest). A small share (about 3%) of employees are seeded as already terminated, with plausible dates, so the terminated view is populated. Inserts use `insert_all` in batches. Names and emails come from fixed lists built with the seeded RNG, so there are no extra gems and no random output. The seed also creates 2 or 3 HR users from env-configurable credentials.
+
+The seed is safe to re-run: it adds any HR users that are missing and skips employees if any already exist (including terminated ones). Run it with `bin/rails db:seed`. It is configured through env vars:
+
+| Variable | Purpose | Default |
+|---|---|---|
+| `SEED_HR_EMAILS` | Comma-separated HR logins | `hr1@acme.test,hr2@acme.test,hr3@acme.test` |
+| `SEED_HR_PASSWORD` | Shared password for those users | `password123` (required in production) |
+| `SEED_EMPLOYEES` | Number of employees | `10000` |
 
 ## 5. Build order (backend slices)
 
