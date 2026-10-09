@@ -27,9 +27,10 @@ These decisions came out of a structured "grill" session before any code was wri
 | 21 | **React Router v7**, with filters, sort and page as `useSearchParams` | TanStack Router; hand-rolled history API | The URL is the single source of truth, so views can be bookmarked and shared. |
 | 22 | JWT stored in **localStorage**. Any 401 clears it and redirects to login. | sessionStorage; memory only | The HR manager stays logged in across browser restarts. Trade-off: the token persists on a shared machine until it expires, and is exposed to XSS. |
 | 23 | **Vitest + React Testing Library**, mocking our `api` module. About 5-8 tests on critical flows only. | MSW; no tests; Playwright e2e | Light, fast and deterministic. Keeps the "every slice ends with passing tests" rule without heavy setup. |
+| 24 | The terminate dialog **always records today** as the termination date, with no date picker. The API's optional `terminated_on` stays. | Editable date in the UI (the original requirement) | Your call, made while reviewing the screen designs: a simpler dialog for v1. Backdating can be added to the UI later with no backend change. |
+| 25 | The 12 v1 screens are designed and exported to [frontend/design/v1-screens.pdf](../frontend/design/v1-screens.pdf). The build follows them, except where the backend or a decision overrides: dropdown options come from `/meta`; the employee code is assigned by the server (hidden on Add, read-only on Edit); the email-taken error is the server's generic message; the header shows the signed-in email and its initials; tab counts come from `meta.total_count`; there is no "Quick raise"; the Terminated list has no "Terminated in" filter (the API doesn't support one); Add, Edit and the terminated View open in a **centered modal**, which supersedes the side drawer in #12. | Build the mockup literally; side drawer (#12) | The mockup used placeholder values and a few things the API can't supply. The modal was chosen in the designs. |
 
 ## Open items
 
-- **Insights screen design** is parked until its slice. The three metrics are in v1 scope.
 - **Gender values** are proposed as `female`, `male`, `non_binary`, `prefer_not_to_say`.
 - **Deployment host** to be decided.

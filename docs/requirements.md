@@ -28,12 +28,12 @@ ACME's HR team manages salary data for ~10,000 employees across several countrie
 - **CSV export** of the current filtered result (all matching rows).
 
 **4. Add, edit and terminate**
-- Add and edit in a side drawer, with per-field validation errors.
-- **Terminate** is a soft delete (paranoia). `deleted_at` is the termination date, which defaults to today and can be edited.
+- Add and edit in a centered modal, with per-field validation errors.
+- **Terminate** is a soft delete (paranoia). `deleted_at` is the termination date. The UI always records today's date; the API still accepts an explicit `terminated_on`.
 - Termination is **irreversible**. Terminated records are **read-only** and are listed in a separate Terminated view.
 - Terminated employees are excluded from the active list and from all metrics.
 
-**5. Insights** (screen design decided when that slice is built)
+**5. Insights** (screen 7 in [frontend/design/v1-screens.pdf](../frontend/design/v1-screens.pdf))
 - Per country: **median salary**, **total payroll cost**, **top-paid employee**.
 
 **6. Seed data**
