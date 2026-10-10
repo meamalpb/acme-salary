@@ -5,6 +5,19 @@ export function formatSalary(amount) {
   return `$${amount.toLocaleString('en-US')}`
 }
 
+const compactUsd = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+})
+
+// 981_600_000 -> "$981.6M" and 47_000_000 -> "$47.0M", for totals too large to read in full.
+export function formatCompactSalary(amount) {
+  return compactUsd.format(amount)
+}
+
 export function formatCount(count) {
   return count.toLocaleString('en-US')
 }

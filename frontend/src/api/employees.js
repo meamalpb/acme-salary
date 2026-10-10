@@ -6,6 +6,10 @@ export function listEmployees(params) {
   return request('/api/v1/employees', { params })
 }
 
+export function getEmployee(id) {
+  return request(`/api/v1/employees/${id}`)
+}
+
 export function createEmployee(fields) {
   return request('/api/v1/employees', { method: 'POST', body: { employee: fields } })
 }
