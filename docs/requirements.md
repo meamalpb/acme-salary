@@ -42,7 +42,9 @@ ACME's HR team manages salary data for ~10,000 employees across several countrie
 
 ## v2 scope: CSV import
 
-The migration path from Excel. The backend is built; the frontend screen is still to come. Reasoning is in decisions #27 to #31.
+The migration path from Excel. Reasoning is in decisions #27 to #32.
+
+- An **Import CSV** button on the Active list opens a modal: choose a file (a header-only template can be downloaded), wait while it imports, then see how many employees were added or which rows to fix.
 
 - The HR manager uploads a CSV file. **Every row adds a new employee**, and the server assigns the employee code. An import never updates or terminates existing employees.
 - **All or nothing.** If any row is invalid, nothing is imported, and every problem is listed by spreadsheet row number and field, so the file can be fixed and uploaded again.
@@ -66,7 +68,7 @@ The migration path from Excel. The backend is built; the frontend screen is stil
 
 ## Later iterations (in order)
 
-1. CSV import (backend built, see v2 scope above; frontend next)
+1. CSV import (built, see v2 scope above)
 2. Salary history and audit log
 3. Pay comparison and gap analysis (by gender, within role and level)
 4. Roles (viewer and editor) and admin-managed users

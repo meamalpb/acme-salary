@@ -62,6 +62,18 @@ describe('api client', () => {
     expect(onUnauthorized).not.toHaveBeenCalled()
   })
 
+  it('sends a FormData body as is, leaving the browser to set the multipart content type', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ id: 7 }, 202))
+    const body = new FormData()
+    body.append('file', new File(['full_name\n'], 'staff.csv'))
+
+    await request('/api/v1/employee_imports', { method: 'POST', body })
+
+    const [, options] = fetchMock.mock.calls[0]
+    expect(options.body).toBe(body)
+    expect(options.headers).not.toHaveProperty('Content-Type')
+  })
+
   it('reports an unreachable server as a network_error', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
 

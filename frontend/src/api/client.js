@@ -34,14 +34,16 @@ export async function send(path, { method = 'GET', params, body, auth = true } =
   const headers = { Accept: 'application/json' }
   const token = getToken()
   if (auth && token) headers.Authorization = token
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // FormData goes as multipart, and the browser sets that Content-Type itself (with the boundary).
+  const isForm = body instanceof FormData
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json'
 
   let response
   try {
     response = await fetch(buildUrl(path, params), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined || isForm ? body : JSON.stringify(body),
     })
   } catch {
     throw new ApiError({ status: 0, code: 'network_error', message: 'Couldn’t reach the server' })

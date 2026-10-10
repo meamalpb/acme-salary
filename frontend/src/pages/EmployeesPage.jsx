@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useDocumentTitle } from '@mantine/hooks'
 import { Button, Group, Pagination, Paper, Select, Stack, Text, Title } from '@mantine/core'
 import ExportButton from '../components/ExportButton.jsx'
+import ImportButton from '../components/ImportButton.jsx'
 import EmployeeFormModal from '../components/EmployeeFormModal.jsx'
 import EmployeeFilters from '../components/EmployeeFilters.jsx'
 import EmployeeTable from '../components/EmployeeTable.jsx'
@@ -44,6 +45,7 @@ export default function EmployeesPage({ status = 'active' }) {
           <Text c="dimmed">{terminated ? 'Terminated records are read-only and not counted in insights' : 'Salaries in USD'}</Text>
         </Group>
         <Group gap="sm">
+          {!terminated && <ImportButton />}
           <ExportButton params={filterParams(params, status)} count={listMeta?.total_count} />
           {!terminated && <Button onClick={() => setSelected('new')}>Add employee</Button>}
         </Group>
