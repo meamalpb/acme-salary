@@ -1,9 +1,11 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
+import { notifications } from '@mantine/notifications'
 import { afterEach, vi } from 'vitest'
 
 afterEach(() => {
   cleanup()
+  notifications.clean()
   vi.unstubAllGlobals()
   localStorage.clear()
 })

@@ -56,9 +56,12 @@ export function useEmployeeListParams(status = 'active') {
   return { params, update, clearFilters }
 }
 
-// Keeps the previous page on screen while the next one loads.
-export function useEmployees({ perPage, ...params }, status = 'active') {
-  const apiParams = { ...params, per_page: perPage, ...(status === 'terminated' && { status }) }
+export function filterParams({ q, country, department, level, sort, direction }, status = 'active') {
+  return { q, country, department, level, sort, direction, ...(status === 'terminated' && { status }) }
+}
+
+export function useEmployees(params, status = 'active') {
+  const apiParams = { ...filterParams(params, status), page: params.page, per_page: params.perPage }
   return useQuery({
     queryKey: ['employees', 'list', apiParams],
     queryFn: () => listEmployees(apiParams),

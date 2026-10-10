@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Box, Button, Group, Pagination, Paper, Select, Stack, Text, Title } from '@mantine/core'
+import ExportButton from '../components/ExportButton.jsx'
 import EmployeeFormModal from '../components/EmployeeFormModal.jsx'
 import EmployeeFilters from '../components/EmployeeFilters.jsx'
 import EmployeeTable from '../components/EmployeeTable.jsx'
 import ViewEmployeeModal from '../components/ViewEmployeeModal.jsx'
 import StatusTabs from '../components/StatusTabs.jsx'
 import { formatCount } from '../format.js'
-import { PER_PAGE_OPTIONS, useEmployeeListParams, useEmployees, useStatusCount } from '../hooks/useEmployeeList.js'
+import { PER_PAGE_OPTIONS, filterParams, useEmployeeListParams, useEmployees, useStatusCount } from '../hooks/useEmployeeList.js'
 import { useMeta } from '../hooks/useMeta.js'
 
 // The Active list and the Terminated list share everything but a few columns and actions.
@@ -40,7 +41,10 @@ export default function EmployeesPage({ status = 'active' }) {
           </Title>
           <Text c="dimmed">{terminated ? 'Terminated records are read-only and not counted in insights' : 'Salaries in USD'}</Text>
         </Box>
-        {!terminated && <Button onClick={() => setSelected('new')}>Add employee</Button>}
+        <Group gap="sm">
+          <ExportButton params={filterParams(params, status)} count={listMeta?.total_count} />
+          {!terminated && <Button onClick={() => setSelected('new')}>Add employee</Button>}
+        </Group>
       </Group>
 
       <StatusTabs activeCount={activeCount.data} terminatedCount={terminatedCount.data} />
