@@ -32,10 +32,15 @@ class ImportEmployeesCsv
   BYTE_ORDER_MARK = "﻿".freeze
   FIRST_DATA_ROW = 2
   MAX_ROWS = 10_000
+  MAX_BYTES = 5.megabytes
   INSERT_BATCH_SIZE = 1_000
 
   def self.call(text)
     new(text).call
+  end
+
+  def self.check_file!(text)
+    new(text).check_file!
   end
 
   def initialize(text)
@@ -48,6 +53,11 @@ class ImportEmployeesCsv
 
     insert(employees)
     Result.new(created_count: employees.size, row_errors: [])
+  end
+
+  def check_file!
+    read_rows
+    nil
   end
 
   private
@@ -65,6 +75,9 @@ class ImportEmployeesCsv
 
   # Uploads arrive as binary, and Excel's "CSV UTF-8" starts with a byte order mark.
   def decode(raw)
+    # Before the encoding check: a caller may cut an oversized upload off mid-character.
+    raise InvalidFile, "is larger than #{MAX_BYTES.to_fs(:human_size)}" if raw.bytesize > MAX_BYTES
+
     text = raw.dup.force_encoding(Encoding::UTF_8)
     raise InvalidFile, 'must be UTF-8 encoded (in Excel, save as "CSV UTF-8")' unless text.valid_encoding?
 

@@ -10,7 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_09_054110) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_10_161134) do
+  create_table "employee_imports", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "status", default: "queued", null: false
+    t.string "filename"
+    t.text "content"
+    t.integer "created_count", default: 0, null: false
+    t.json "row_errors", default: [], null: false
+    t.string "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_employee_imports_on_user_id"
+  end
+
   create_table "employees", force: :cascade do |t|
     t.string "employee_code", null: false
     t.string "full_name", null: false
@@ -45,4 +58,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_09_054110) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
   end
+
+  add_foreign_key "employee_imports", "users"
 end

@@ -203,5 +203,26 @@ RSpec.describe ImportEmployeesCsv do
         .to raise_error(described_class::InvalidFile, "File has more than 2 rows")
       expect(Employee.count).to eq(0)
     end
+
+    it "rejects a file over the size limit" do
+      stub_const("ImportEmployeesCsv::MAX_BYTES", 100)
+
+      expect { described_class.call(csv(row)) }
+        .to raise_error(described_class::InvalidFile, "File is larger than 100 Bytes")
+    end
+  end
+
+  describe ".check_file!" do
+    it "raises InvalidFile for a problem with the whole file" do
+      expect { described_class.check_file!(csv("")) }
+        .to raise_error(described_class::InvalidFile, "File has no employee rows")
+    end
+
+    it "leaves the rows unchecked, so invalid rows still pass" do
+      create(:employee, email: "asha@acme.test")
+
+      expect { described_class.check_file!(csv(row, row(email: "ben@acme.test", salary: "0"))) }.not_to raise_error
+      expect(Employee.count).to eq(1)
+    end
   end
 end

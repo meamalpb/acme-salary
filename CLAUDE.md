@@ -16,6 +16,8 @@ ACME Salary is employee salary management for an HR manager (~10,000 employees, 
 - Pagination: kaminari
 - Serialization: Alba
 - Seed names: faker (default group, `require: false`, since seeds also run in production)
+- CSV import parsing: csv (a bundled gem since Ruby 3.4, so it must be in the Gemfile)
+- Background jobs: Active Job, with solid_queue in production and the in-process `:async` adapter in development
 - Tests: RSpec + FactoryBot + shoulda-matchers
 - Lint: rubocop-rails-omakase
 
@@ -44,7 +46,8 @@ bin/rails server          # http://localhost:3000
 - **Thin controllers** under `Api::V1::`. Routes are prefixed with `/api/v1`.
 - **Models** hold validations, enums and simple scopes.
 - **Query objects** (`app/queries/`) handle search, filter and sort for the employee list.
-- **Services** (`app/services/`) handle multi-step operations: terminating an employee, CSV export, insights.
+- **Services** (`app/services/`) handle multi-step operations: terminating an employee, CSV export and import, insights.
+- **Jobs** (`app/jobs/`) stay thin: they run a service in the background and record its outcome on a model the client polls (`ImportEmployeesJob` on `EmployeeImport`).
 - **Serializers** (`app/serializers/`) are Alba resources. They are the only place that decides JSON shape.
 - **Fixed lists** (country, department, level, gender) are string-backed Rails enums, so the DB stores readable values.
 - **Money:** `salary` is an integer of whole USD. Never use floats.

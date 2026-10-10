@@ -40,13 +40,24 @@ ACME's HR team manages salary data for ~10,000 employees across several countrie
 - 10,000 employees with **realistic salaries**: level base × country multiplier × ±15% noise.
 - Uneven headcount across countries, a level pyramid (many Juniors, few Principals), and a **fixed random seed** so every run is identical.
 
+## v2 scope: CSV import
+
+The migration path from Excel. The backend is built; the frontend screen is still to come. Reasoning is in decisions #27 to #31.
+
+- The HR manager uploads a CSV file. **Every row adds a new employee**, and the server assigns the employee code. An import never updates or terminates existing employees.
+- **All or nothing.** If any row is invalid, nothing is imported, and every problem is listed by spreadsheet row number and field, so the file can be fixed and uploaded again.
+- An email that's already in use (including by a terminated employee) or repeated within the file is a row error.
+- Columns use the export's names, matched loosely (case, spaces, Excel's byte order mark), and other columns are ignored. Fixed-list cells accept the value or the label (`united_states` or `United States`). Dates must be `YYYY-MM-DD`. Salaries are whole US dollars.
+- A file holds at most 10,000 rows and 5 MB, and must be UTF-8 ("CSV UTF-8" in Excel's Save As).
+- The import runs in the **background**. Problems with the file as a whole are reported straight away. Row errors are available once the import has run, and the frontend checks for them by polling.
+
 ## Deliberately out of scope
 
 | Left out | Why |
 |---|---|
 | Multi-currency and FX conversion | Storing everything in USD keeps totals and comparisons correct with no rates table or "rate as of when" problem. The schema can add a currency later. |
 | Salary history and audit log | v1 metrics only need the current salary. History doubles the data model and UI. It's the natural next step with an audit trail. |
-| CSV/Excel import | Needed eventually, since it's the migration path from Excel, but it brings its own validation, error reporting and duplicate handling. The seed script covers v1. **This is the first v2 item.** |
+| CSV/Excel import (in v1) | It brings its own validation, error reporting and duplicate handling, so the seed script covered v1. **CSV import is now in v2 scope (above).** Excel `.xlsx` files are not read directly: Excel saves CSV in one step. |
 | Pay comparison and pay gap analysis | Gender is stored now so this is possible later. Doing it properly (same role and level, statistical care) is beyond a first iteration. |
 | Roles, permissions, user management | There's a single persona with equal access, and the seed script creates users. Not having public signup is a deliberate security choice for salary data. |
 | Reinstating terminated employees | Keeping termination irreversible keeps `deleted_at` a trustworthy termination date. |
@@ -55,7 +66,7 @@ ACME's HR team manages salary data for ~10,000 employees across several countrie
 
 ## Later iterations (in order)
 
-1. CSV/Excel import
+1. CSV import (backend built, see v2 scope above; frontend next)
 2. Salary history and audit log
 3. Pay comparison and gap analysis (by gender, within role and level)
 4. Roles (viewer and editor) and admin-managed users

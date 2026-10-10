@@ -34,9 +34,22 @@ erDiagram
         string  jti "indexed"
         datetime exp
     }
+    employee_imports {
+        integer id PK
+        integer user_id FK "who uploaded it"
+        string  status "queued, processing, succeeded, failed"
+        string  filename
+        text    content "the upload, cleared when finished"
+        integer created_count
+        json    row_errors
+        string  error_message
+        datetime created_at
+        datetime updated_at
+    }
+    users ||--o{ employee_imports : uploads
 ```
 
-`users` and `jwt_denylists` are unrelated to `employees`. HR users are not employees.
+`users` and `jwt_denylists` are unrelated to `employees`. HR users are not employees. Each `employee_imports` row (v2) belongs to the HR user who uploaded the file.
 
 ### 1.1 `employees`
 
@@ -54,7 +67,7 @@ erDiagram
 | `salary` | integer | not null | Annual, whole USD, greater than 0. No floats. |
 | `deleted_at` | datetime | nullable | paranoia. `NULL` means active; a value is the termination date. |
 
-**Validations (model):** presence of all columns above, email format and uniqueness, `salary` integer range, `hire_date` not in the future, inclusion of the enum values.
+**Validations (model):** presence of all columns above, email format and uniqueness, `salary` integer range, `hire_date` not in the future, inclusion of the enum values. The uniqueness checks on `email` and `employee_code` include terminated employees, matching the unique indexes; paranoia's default scope would otherwise hide them and let the insert fail with a 500.
 
 **Termination rules** (enforced in the `TerminateEmployee` service and a model guard):
 - The termination date must be on or after `hire_date` and not in the future.
@@ -93,6 +106,20 @@ Level order (junior, then mid, and so on up to principal) is meaningful. The see
 
 - `users`: standard Devise `database_authenticatable` columns (`email`, `encrypted_password`). No signup, `recoverable` or `registerable` modules. Users are created by the seed script only.
 - `jwt_denylists`: `jti` (indexed) and `exp`. Logout writes the token's `jti` here and every request checks it. Token lifetime is 1 day. Expired rows can be purged.
+
+### 1.5 `employee_imports` (v2)
+
+One uploaded CSV import, created by the upload request and run by `ImportEmployeesJob`.
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| `user_id` | integer | not null, foreign key | The HR user who uploaded the file. Any HR user can read any import (all users are equal, #8). |
+| `status` | string | not null, default `queued` | Enum: `queued`, then `processing`, then `succeeded` or `failed`. |
+| `filename` | string | nullable | The uploaded file's name, for display. |
+| `content` | text | nullable | The CSV as uploaded. It's cleared when the job finishes, so salary data isn't kept twice. |
+| `created_count` | integer | not null, default 0 | Employees created. Non-zero only when `succeeded`. |
+| `row_errors` | json | not null, default `[]` | `[{ "row": 3, "errors": { "salary": ["must be greater than 0"] } }]`. `row` is the spreadsheet row number (the header is row 1). |
+| `error_message` | string | nullable | A sentence to show when `failed`. |
 
 ## 2. API
 
@@ -139,10 +166,11 @@ Base path `/api/v1`. All requests and responses are JSON, apart from the CSV exp
 | HTTP | `code` | When |
 |---|---|---|
 | 401 | `unauthorized` | Missing, invalid, expired or revoked token; bad login credentials |
-| 404 | `not_found` | Unknown employee id |
+| 404 | `not_found` | Unknown employee or import id |
 | 422 | `validation_failed` | Field errors, listed per field in `details` |
 | 422 | `employee_terminated` | Update or terminate on an already-terminated employee |
-| 422 | `invalid_param` | Unknown enum value in a filter, unknown `sort` field, `per_page` out of range |
+| 422 | `invalid_param` | Unknown enum value in a filter, unknown `sort` field, `per_page` out of range, missing import `file` |
+| 422 | `invalid_file` | An import upload that's unusable as a whole: see 2.6. `details.file` holds the problem. |
 
 ### 2.2 Auth
 
@@ -182,7 +210,7 @@ Ordering always ends with `id` as a tiebreaker, so pagination is stable.
 
 **Terminate body:** optional `{ "terminated_on": "2026-10-09" }`, defaulting to today. See the date rules in 1.1.
 
-**CSV export:** a header row followed by one row per employee, with human-readable labels (for example `United States`) in place of slugs. Rows are streamed in batches (`find_each`-style) so 10k rows don't sit in memory. The same ordering rules apply as for the list.
+**CSV export:** a header row (the employee fields, plus `terminated_on` when `status` is `terminated` or `all`) followed by one row per employee. Fixed-list cells hold the stored slugs (for example `united_states`). Rows are read with a single `pluck`, which is a few MB at 10k rows. Text cells that start with `=`, `+`, `-` or `@` are prefixed with `'` so spreadsheets show them instead of running them as formulas. The same ordering rules apply as for the list.
 
 ### 2.4 Meta
 
@@ -210,14 +238,44 @@ Ordering always ends with `id` as a tiebreaker, so pagination is stable.
 - `top_paid` ties go to the lowest id, so the result is deterministic.
 - Countries with no active employees are omitted. `country` is the enum slug, so the frontend maps it to a label through `/meta`.
 
+### 2.6 Employee imports (v2)
+
+| Method and path | Purpose | Success |
+|---|---|---|
+| `POST /api/v1/employee_imports` | Upload a CSV as multipart form data, field `file` | 202, import object with `status: "queued"` |
+| `GET /api/v1/employee_imports/:id` | Check on an import | 200, import object |
+
+**Import object:**
+
+```json
+{ "id": 7, "status": "failed", "filename": "staff.csv", "created_count": 0,
+  "row_errors": [ { "row": 3, "errors": { "salary": ["must be greater than 0"] } } ],
+  "error_message": "Nothing was imported. Fix the rows listed and upload the file again.",
+  "created_at": "2026-10-10T12:00:00.000Z" }
+```
+
+**Flow:** the upload request checks the file as a whole, stores it and queues `ImportEmployeesJob`. The job runs `ImportEmployeesCsv`. The client polls `GET` every second or two until `status` is `succeeded` or `failed`.
+
+- `succeeded`: `created_count` employees were created.
+- `failed` with `row_errors`: some rows are invalid and nothing was imported.
+- `failed` with an empty `row_errors`: an email was taken by someone else while the import ran, or the job hit an unexpected error. Nothing was imported, and `error_message` says to upload the file again.
+
+**Whole-file checks**, which return 422 `invalid_file` from the upload request: larger than 5 MB, not UTF-8, empty, not valid CSV, missing a required column, no employee rows, or more than 10,000 rows. A request with no `file` returns 422 `invalid_param`.
+
+**Rows** (decisions #27 to #31):
+- Required columns are the employee fields from the export: `full_name`, `email`, `gender`, `job_title`, `department`, `level`, `country`, `hire_date`, `salary`. Header matching ignores case, surrounding spaces and Excel's byte order mark, and treats spaces as underscores (`Hire Date`). Other columns, including `employee_code` and `terminated_on`, are ignored.
+- Each row is validated by the `Employee` model, so the messages match the Add form. Fixed-list cells accept the slug or the label in any case, and an unknown value is "not included in the list". `hire_date` must be `YYYY-MM-DD`. An email repeated in the file is "is also in row N". Blank rows are skipped but still counted, so row numbers match the spreadsheet.
+- When every row is valid, codes are numbered from the current highest code inside one transaction, and the rows are inserted with `insert_all!` in batches of 1,000. 10k rows take about 3.5s, mostly validation.
+
 ## 3. Code layout
 
 ```
 app/
   controllers/api/v1/   # thin: auth, params, render
-  models/               # Employee, User, JwtDenylist: validations, enums, scopes
+  models/               # Employee, EmployeeImport, User, JwtDenylist: validations, enums, scopes
   queries/              # EmployeeSearch (search, filter, sort); SalaryInsightsByCountry
-  services/             # TerminateEmployee, CreateEmployee (code generation), EmployeeCsvExport
+  services/             # TerminateEmployee, CreateEmployee (code generation), ExportEmployeesCsv, ImportEmployeesCsv
+  jobs/                 # ImportEmployeesJob: runs an import and records the outcome on its EmployeeImport
   serializers/          # Alba resources: EmployeeSerializer, ...
 db/seeds.rb             # deterministic: 10k employees and HR users
 db/seeds/employee_generator.rb  # builds the seed rows; specced in spec/seeds/
@@ -271,7 +329,15 @@ Each slice follows tests first, then a migration made with the generator, then t
 9. **Insights:** SQL median and the endpoint. Finalise 2.5.
 10. **Performance pass and README:** `EXPLAIN` results, timings, run and deploy notes.
 
+v2:
+
+11. **CSV import service:** `ImportEmployeesCsv` parses the file, validates every row and inserts all or nothing.
+12. **CSV import job and endpoints:** `employee_imports`, `ImportEmployeesJob`, upload and polling. Finalise 2.6.
+
 ## 6. Notes for later phases
 
 - **CORS:** `rack-cors` is configured in `config/initializers/cors.rb`.
 - **Downloading the CSV** needs the auth header, so the frontend fetches it as a blob rather than using a plain link.
+- **Uploading an import** is a `FormData` POST with the auth header, followed by polling (2.6).
+- **Background jobs:** development uses Active Job's in-process `:async` adapter, so a job still queued when the server restarts is lost, and its import stays `queued`. Production uses solid_queue, which needs a worker running: `bin/jobs`, or `SOLID_QUEUE_IN_PUMA=1` to run it inside Puma.
+- **A worker that dies mid-import** writes nothing, because the insert is one transaction, but it can leave the import `processing`. If that matters in practice, a sweeper can mark stale imports `failed`.

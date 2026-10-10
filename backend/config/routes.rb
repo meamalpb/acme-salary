@@ -20,6 +20,8 @@ Rails.application.routes.draw do
         get :export, on: :collection
         post :terminate, on: :member
       end
+
+      resources :employee_imports, only: %i[create show]
     end
   end
 end
