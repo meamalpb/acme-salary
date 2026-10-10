@@ -122,28 +122,26 @@ export default function EmployeeFormModal({ employee, meta, onClose }) {
               <Input.Wrapper label="Level" error={form.errors.level}>
                 <SegmentedControl fullWidth data={meta?.levels ?? []} {...form.getInputProps('level')} />
               </Input.Wrapper>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm" style={{ alignItems: 'start' }}>
-                <Input.Wrapper label="Gender" error={form.errors.gender}>
-                  <SegmentedControl fullWidth size="xs" data={meta?.genders ?? []} {...form.getInputProps('gender')} />
-                </Input.Wrapper>
-                <Box>
-                  <TextInput
-                    label="Annual salary"
-                    inputMode="numeric"
-                    placeholder="0"
-                    leftSection="$"
-                    rightSection={<Text size="xs" c="dimmed">USD</Text>}
-                    rightSectionWidth={44}
-                    styles={{ input: { fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }}
-                    {...fieldProps('salary')}
-                  />
-                  {!fieldProps('salary').error && (
-                    <Text size="xs" mt={4} c={change?.direction > 0 ? 'brand.8' : change?.direction < 0 ? 'red.7' : 'dimmed'}>
-                      {isEdit && change ? change.text : 'Whole dollars, e.g. 85000'}
-                    </Text>
-                  )}
-                </Box>
-              </SimpleGrid>
+              <Input.Wrapper label="Gender" error={form.errors.gender}>
+                <SegmentedControl fullWidth data={meta?.genders ?? []} {...form.getInputProps('gender')} />
+              </Input.Wrapper>
+              <Box>
+                <TextInput
+                  label="Annual salary"
+                  inputMode="numeric"
+                  placeholder="0"
+                  leftSection="$"
+                  rightSection={<Text size="xs" c="dimmed">USD</Text>}
+                  rightSectionWidth={44}
+                  styles={{ input: { fontWeight: 600, fontVariantNumeric: 'tabular-nums' } }}
+                  {...fieldProps('salary')}
+                />
+                {!fieldProps('salary').error && (
+                  <Text size="xs" mt={4} c={change?.direction > 0 ? 'brand.8' : change?.direction < 0 ? 'red.7' : 'dimmed'}>
+                    {isEdit && change ? change.text : 'Whole dollars, e.g. 85000'}
+                  </Text>
+                )}
+              </Box>
             </Stack>
           </Box>
 

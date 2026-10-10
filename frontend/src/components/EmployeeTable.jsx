@@ -146,7 +146,7 @@ export default function EmployeeTable({
               <Table.Td c="gray.7">{formatDate(employee.hire_date)}</Table.Td>
               {terminated && (
                 <Table.Td>
-                  <Badge radius="xl" color="red" variant="light">
+                  <Badge radius="xl" color="red" variant="light" tt="none">
                     {formatDate(employee.terminated_on)}
                   </Badge>
                 </Table.Td>
