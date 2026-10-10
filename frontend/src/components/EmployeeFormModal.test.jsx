@@ -6,7 +6,7 @@ import * as employeesApi from '../api/employees.js'
 import { renderApp } from '../test/renderApp.jsx'
 import EmployeeFormModal from './EmployeeFormModal.jsx'
 
-vi.mock('../api/employees.js', () => ({ listEmployees: vi.fn(), createEmployee: vi.fn(), updateEmployee: vi.fn() }))
+vi.mock('../api/employees.js', () => ({ listEmployees: vi.fn(), createEmployee: vi.fn(), updateEmployee: vi.fn(), terminateEmployee: vi.fn() }))
 vi.mock('../api/auth.js', () => ({ login: vi.fn(), logout: vi.fn() }))
 
 const meta = {

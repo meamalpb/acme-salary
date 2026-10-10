@@ -27,7 +27,8 @@ function CloseIcon() {
   )
 }
 
-export default function EmployeeFilters({ params, meta, onChange, onClear }) {
+export default function EmployeeFilters({ params, meta, showLevel = true, onChange, onClear }) {
+  const filters = showLevel ? FILTERS : FILTERS.filter((filter) => filter.key !== 'level')
   // The box shows what is typed; the URL only gets the text once typing pauses.
   const [search, setSearch] = useState(params.q)
   const [seenQuery, setSeenQuery] = useState(params.q)
@@ -40,7 +41,7 @@ export default function EmployeeFilters({ params, meta, onChange, onClear }) {
 
   const chips = []
   if (params.q) chips.push({ key: 'q', text: `“${params.q}”` })
-  for (const filter of FILTERS) {
+  for (const filter of filters) {
     if (params[filter.key]) chips.push({ key: filter.key, text: labelFor(meta, filter.key, params[filter.key]) })
   }
 
@@ -59,7 +60,7 @@ export default function EmployeeFilters({ params, meta, onChange, onClear }) {
           }}
           style={{ flex: '2 1 260px' }}
         />
-        {FILTERS.map((filter) => (
+        {filters.map((filter) => (
           <Select
             key={filter.key}
             aria-label={filter.label}

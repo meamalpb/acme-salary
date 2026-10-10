@@ -55,11 +55,12 @@ export default function EmployeeTable({
   isRefreshing,
   sort,
   direction,
+  terminated,
   hasFilters,
   onSort,
   onRetry,
   onClearFilters,
-  onEdit,
+  onOpen,
 }) {
   return (
     <Table.ScrollContainer minWidth={960}>
@@ -68,10 +69,18 @@ export default function EmployeeTable({
           <Table.Tr>
             <SortableHeader label="Employee" column="full_name" sort={sort} direction={direction} onSort={onSort} />
             <Table.Th>Role</Table.Th>
-            <Table.Th>Level</Table.Th>
+            {!terminated && <Table.Th>Level</Table.Th>}
             <Table.Th>Country</Table.Th>
             <SortableHeader label="Hired" column="hire_date" sort={sort} direction={direction} onSort={onSort} />
-            <SortableHeader label="Salary" column="salary" sort={sort} direction={direction} onSort={onSort} align="right" />
+            {terminated && <SortableHeader label="Terminated" column="terminated_on" sort={sort} direction={direction} onSort={onSort} />}
+            <SortableHeader
+              label={terminated ? 'Last salary' : 'Salary'}
+              column="salary"
+              sort={sort}
+              direction={direction}
+              onSort={onSort}
+              align="right"
+            />
             <Table.Th w={48}>
               <Box component="span" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>
                 Actions
@@ -94,7 +103,7 @@ export default function EmployeeTable({
           {!isLoading && !isError && rows.length === 0 && (
             <MessageRow>
               <Text ta="center" c="dimmed">
-                No employees match these filters.{' '}
+                {hasFilters ? 'No employees match these filters.' : terminated ? 'No employees have been terminated.' : 'No employees yet.'}{' '}
                 {hasFilters && (
                   <Button variant="subtle" size="compact-sm" onClick={onClearFilters}>
                     Clear filters
@@ -104,14 +113,16 @@ export default function EmployeeTable({
             </MessageRow>
           )}
           {rows.map((employee) => (
-            <Table.Tr key={employee.id}>
+            <Table.Tr key={employee.id} c={terminated ? 'gray.7' : undefined}>
               <Table.Td>
                 <Group gap="sm" wrap="nowrap">
-                  <Avatar size={32} radius="xl" color="brand" fw={700}>
+                  <Avatar size={32} radius="xl" color={terminated ? 'gray' : 'brand'} fw={700}>
                     {initialsFromName(employee.full_name)}
                   </Avatar>
                   <Box>
-                    <Text fw={500}>{employee.full_name}</Text>
+                    <Text fw={500} c={terminated ? 'dark' : undefined}>
+                      {employee.full_name}
+                    </Text>
                     <Text size="xs" c="dimmed">
                       {employee.employee_code}
                     </Text>
@@ -124,22 +135,44 @@ export default function EmployeeTable({
                   {labelFor(meta, 'department', employee.department)}
                 </Text>
               </Table.Td>
-              <Table.Td>
-                <Badge radius="xl" style={LEVEL_COLORS[employee.level]}>
-                  {labelFor(meta, 'level', employee.level)}
-                </Badge>
-              </Table.Td>
+              {!terminated && (
+                <Table.Td>
+                  <Badge radius="xl" style={LEVEL_COLORS[employee.level]}>
+                    {labelFor(meta, 'level', employee.level)}
+                  </Badge>
+                </Table.Td>
+              )}
               <Table.Td>{labelFor(meta, 'country', employee.country)}</Table.Td>
               <Table.Td c="gray.7">{formatDate(employee.hire_date)}</Table.Td>
+              {terminated && (
+                <Table.Td>
+                  <Badge radius="xl" color="red" variant="light">
+                    {formatDate(employee.terminated_on)}
+                  </Badge>
+                </Table.Td>
+              )}
               <Table.Td ta="right" fw={600} style={{ fontVariantNumeric: 'tabular-nums' }}>
                 {formatSalary(employee.salary)}
               </Table.Td>
               <Table.Td>
-                <ActionIcon variant="subtle" color="brand" size={34} aria-label={`Edit ${employee.full_name}`} onClick={() => onEdit(employee)}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M4 20h4l10.5-10.5a2.83 2.83 0 1 0-4-4L4 16v4" />
-                    <path d="M13.5 6.5l4 4" />
-                  </svg>
+                <ActionIcon
+                  variant="subtle"
+                  color={terminated ? 'gray' : 'brand'}
+                  size={34}
+                  aria-label={terminated ? `View ${employee.full_name} (read-only)` : `Edit ${employee.full_name}`}
+                  onClick={() => onOpen(employee)}
+                >
+                  {terminated ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M4 20h4l10.5-10.5a2.83 2.83 0 1 0-4-4L4 16v4" />
+                      <path d="M13.5 6.5l4 4" />
+                    </svg>
+                  )}
                 </ActionIcon>
               </Table.Td>
             </Table.Tr>

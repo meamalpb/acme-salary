@@ -3,12 +3,20 @@ import { useSearchParams } from 'react-router'
 import { listEmployees } from '../api/employees.js'
 
 export const PER_PAGE_OPTIONS = [10, 25, 50]
-const SORTS = ['full_name', 'hire_date', 'salary']
 const DIRECTIONS = ['asc', 'desc']
+// Terminated employees can also be sorted by when they left, newest first by default.
+const SORTS = {
+  active: ['full_name', 'hire_date', 'salary'],
+  terminated: ['full_name', 'hire_date', 'salary', 'terminated_on'],
+}
+const DEFAULT_SORT = {
+  active: { sort: 'full_name', direction: 'asc' },
+  terminated: { sort: 'terminated_on', direction: 'desc' },
+}
 
 // The URL is the single source of truth for search, filters, sort and page.
 // Anything missing or invalid falls back to a default.
-export function useEmployeeListParams() {
+export function useEmployeeListParams(status = 'active') {
   const [searchParams, setSearchParams] = useSearchParams()
   const read = (key) => searchParams.get(key) ?? ''
   const page = Number.parseInt(read('page'), 10)
@@ -18,9 +26,10 @@ export function useEmployeeListParams() {
     q: read('q'),
     country: read('country'),
     department: read('department'),
-    level: read('level'),
-    sort: SORTS.includes(read('sort')) ? read('sort') : 'full_name',
-    direction: DIRECTIONS.includes(read('direction')) ? read('direction') : 'asc',
+    // The Terminated list has no Level filter.
+    level: status === 'active' ? read('level') : '',
+    sort: SORTS[status].includes(read('sort')) ? read('sort') : DEFAULT_SORT[status].sort,
+    direction: DIRECTIONS.includes(read('direction')) ? read('direction') : DEFAULT_SORT[status].direction,
     page: page >= 1 ? page : 1,
     perPage: PER_PAGE_OPTIONS.includes(perPage) ? perPage : PER_PAGE_OPTIONS[0],
   }
@@ -48,8 +57,8 @@ export function useEmployeeListParams() {
 }
 
 // Keeps the previous page on screen while the next one loads.
-export function useEmployees({ perPage, ...params }) {
-  const apiParams = { ...params, per_page: perPage }
+export function useEmployees({ perPage, ...params }, status = 'active') {
+  const apiParams = { ...params, per_page: perPage, ...(status === 'terminated' && { status }) }
   return useQuery({
     queryKey: ['employees', 'list', apiParams],
     queryFn: () => listEmployees(apiParams),

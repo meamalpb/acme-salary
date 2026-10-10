@@ -3,19 +3,22 @@ import { Box, Button, Group, Pagination, Paper, Select, Stack, Text, Title } fro
 import EmployeeFormModal from '../components/EmployeeFormModal.jsx'
 import EmployeeFilters from '../components/EmployeeFilters.jsx'
 import EmployeeTable from '../components/EmployeeTable.jsx'
+import ViewEmployeeModal from '../components/ViewEmployeeModal.jsx'
 import StatusTabs from '../components/StatusTabs.jsx'
 import { formatCount } from '../format.js'
 import { PER_PAGE_OPTIONS, useEmployeeListParams, useEmployees, useStatusCount } from '../hooks/useEmployeeList.js'
 import { useMeta } from '../hooks/useMeta.js'
 
-export default function EmployeesPage() {
-  const { params, update, clearFilters } = useEmployeeListParams()
+// The Active list and the Terminated list share everything but a few columns and actions.
+export default function EmployeesPage({ status = 'active' }) {
+  const terminated = status === 'terminated'
+  const { params, update, clearFilters } = useEmployeeListParams(status)
   const { data: meta } = useMeta()
-  const list = useEmployees(params)
+  const list = useEmployees(params, status)
   const activeCount = useStatusCount('active')
   const terminatedCount = useStatusCount('terminated')
-  // null = closed, 'new' = adding, an employee = editing that employee.
-  const [editing, setEditing] = useState(null)
+  // null = closed, 'new' = adding, an employee = editing it (Active) or viewing it (Terminated).
+  const [selected, setSelected] = useState(null)
 
   const rows = list.data?.data ?? []
   const listMeta = list.data?.meta
@@ -35,15 +38,15 @@ export default function EmployeesPage() {
           <Title order={1} fz={26}>
             Employees
           </Title>
-          <Text c="dimmed">Salaries in USD</Text>
+          <Text c="dimmed">{terminated ? 'Terminated records are read-only and not counted in insights' : 'Salaries in USD'}</Text>
         </Box>
-        <Button onClick={() => setEditing('new')}>Add employee</Button>
+        {!terminated && <Button onClick={() => setSelected('new')}>Add employee</Button>}
       </Group>
 
       <StatusTabs activeCount={activeCount.data} terminatedCount={terminatedCount.data} />
 
       <Paper withBorder radius="lg" shadow="xs" style={{ overflow: 'hidden' }}>
-        <EmployeeFilters params={params} meta={meta} onChange={update} onClear={clearFilters} />
+        <EmployeeFilters params={params} meta={meta} showLevel={!terminated} onChange={update} onClear={clearFilters} />
         <EmployeeTable
           rows={rows}
           meta={meta}
@@ -53,11 +56,12 @@ export default function EmployeesPage() {
           isRefreshing={list.isPlaceholderData}
           sort={params.sort}
           direction={params.direction}
+          terminated={terminated}
           hasFilters={hasFilters}
           onSort={handleSort}
           onRetry={() => list.refetch()}
           onClearFilters={clearFilters}
-          onEdit={setEditing}
+          onOpen={setSelected}
         />
         {list.isPending && (
           <Text role="status" c="dimmed" p="md">
@@ -84,7 +88,10 @@ export default function EmployeesPage() {
           </Group>
         )}
       </Paper>
-      {editing && <EmployeeFormModal employee={editing === 'new' ? null : editing} meta={meta} onClose={() => setEditing(null)} />}
+      {selected && !terminated && (
+        <EmployeeFormModal employee={selected === 'new' ? null : selected} meta={meta} onClose={() => setSelected(null)} />
+      )}
+      {selected && terminated && <ViewEmployeeModal employee={selected} meta={meta} onClose={() => setSelected(null)} />}
     </Stack>
   )
 }

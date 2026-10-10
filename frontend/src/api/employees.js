@@ -12,3 +12,8 @@ export function createEmployee(fields) {
 export function updateEmployee(id, fields) {
   return request(`/api/v1/employees/${id}`, { method: 'PATCH', body: { employee: fields } })
 }
+
+// The server records today's date as the termination date.
+export function terminateEmployee(id) {
+  return request(`/api/v1/employees/${id}/terminate`, { method: 'POST' })
+}

@@ -8,7 +8,7 @@ import * as metaApi from '../api/meta.js'
 import { renderApp } from '../test/renderApp.jsx'
 import EmployeesPage from './EmployeesPage.jsx'
 
-vi.mock('../api/employees.js', () => ({ listEmployees: vi.fn(), createEmployee: vi.fn(), updateEmployee: vi.fn() }))
+vi.mock('../api/employees.js', () => ({ listEmployees: vi.fn(), createEmployee: vi.fn(), updateEmployee: vi.fn(), terminateEmployee: vi.fn() }))
 vi.mock('../api/meta.js', () => ({ getMeta: vi.fn() }))
 vi.mock('../api/auth.js', () => ({ login: vi.fn(), logout: vi.fn() }))
 
@@ -196,5 +196,74 @@ describe('EmployeesPage', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(employeesApi.updateEmployee).toHaveBeenCalledWith(1, expect.objectContaining({ salary: 180000 }))
     await waitFor(() => expect(employeesApi.listEmployees.mock.calls.length).toBeGreaterThan(listCallsBefore))
+  })
+
+  describe('terminating', () => {
+    async function openTerminateConfirm() {
+      await screen.findByText('Priya Raman')
+      await userEvent.click(screen.getByRole('button', { name: 'Edit Priya Raman' }))
+      await userEvent.click(await screen.findByRole('button', { name: 'Terminate…' }))
+      return screen.findByRole('dialog', { name: /Terminate Priya Raman\?/ })
+    }
+
+    it('terminates from the Edit modal, closes both modals and refreshes the list', async () => {
+      employeesApi.terminateEmployee.mockResolvedValue({ ...priya, terminated_on: '2026-10-09' })
+      renderList()
+      const confirm = await openTerminateConfirm()
+      expect(within(confirm).getByText('This can’t be undone.')).toBeInTheDocument()
+      expect(within(confirm).getByText(/will be recorded as today/)).toBeInTheDocument()
+      expect(within(confirm).getByText(/^\d{1,2} \w{3} \d{4}$/)).toBeInTheDocument()
+      const listCallsBefore = employeesApi.listEmployees.mock.calls.length
+
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Terminate' }))
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      expect(employeesApi.terminateEmployee).toHaveBeenCalledWith(1)
+      await waitFor(() => expect(employeesApi.listEmployees.mock.calls.length).toBeGreaterThan(listCallsBefore))
+    })
+
+    it('goes back to the Edit modal with unsaved changes when you keep the employee', async () => {
+      renderList()
+      await screen.findByText('Priya Raman')
+      await userEvent.click(screen.getByRole('button', { name: 'Edit Priya Raman' }))
+      const edit = await screen.findByRole('dialog')
+      await userEvent.clear(within(edit).getByLabelText('Annual salary'))
+      await userEvent.type(within(edit).getByLabelText('Annual salary'), '180000')
+      await userEvent.click(within(edit).getByRole('button', { name: 'Terminate…' }))
+      const confirm = await screen.findByRole('dialog', { name: /Terminate Priya Raman\?/ })
+
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Keep employee' }))
+
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: /Terminate Priya Raman\?/ })).not.toBeInTheDocument())
+      expect(screen.getByLabelText('Annual salary')).toHaveValue('180000')
+      expect(employeesApi.terminateEmployee).not.toHaveBeenCalled()
+    })
+
+    it('shows why the server refused and keeps the dialog open', async () => {
+      employeesApi.terminateEmployee.mockRejectedValue(
+        new ApiError({ status: 422, code: 'employee_terminated', message: 'Terminated employees are read-only' }),
+      )
+      renderList()
+      const confirm = await openTerminateConfirm()
+
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Terminate' }))
+
+      expect(await within(confirm).findByText('Terminated employees are read-only')).toBeInTheDocument()
+      expect(screen.getAllByRole('dialog')).toHaveLength(2)
+    })
+
+    it('offers a retry when the server is unreachable', async () => {
+      employeesApi.terminateEmployee.mockRejectedValueOnce(new ApiError({ status: 0, code: 'network_error', message: 'Couldn’t reach the server' }))
+      employeesApi.terminateEmployee.mockResolvedValue({ ...priya, terminated_on: '2026-10-09' })
+      renderList()
+      const confirm = await openTerminateConfirm()
+
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Terminate' }))
+      expect(await within(confirm).findByText(/The server didn’t respond/)).toBeInTheDocument()
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Try again' }))
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      expect(employeesApi.terminateEmployee).toHaveBeenCalledTimes(2)
+    })
   })
 })

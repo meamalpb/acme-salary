@@ -5,7 +5,7 @@ import AppLayout from './components/AppLayout.jsx'
 import EmployeesPage from './pages/EmployeesPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 
-// Placeholders until the Terminated list and insights slices are built.
+// Placeholder until the insights slice is built.
 function Placeholder({ title }) {
   return <Title order={1}>{title}</Title>
 }
@@ -16,8 +16,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/employees" element={<EmployeesPage />} />
-          <Route path="/employees/terminated" element={<Placeholder title="Terminated employees" />} />
+          <Route path="/employees" element={<EmployeesPage key="active" status="active" />} />
+          <Route path="/employees/terminated" element={<EmployeesPage key="terminated" status="terminated" />} />
           <Route path="/insights" element={<Placeholder title="Insights" />} />
         </Route>
       </Route>
