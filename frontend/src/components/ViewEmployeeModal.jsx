@@ -1,5 +1,6 @@
 import { Avatar, Badge, Box, Button, Group, Modal, SimpleGrid, Text } from '@mantine/core'
 import { formatDate, formatSalary, initialsFromName, labelFor } from '../format.js'
+import { useReturnFocus } from '../hooks/useReturnFocus.js'
 
 function Field({ label, value, span, color, weight = 500 }) {
   return (
@@ -16,6 +17,7 @@ function Field({ label, value, span, color, weight = 500 }) {
 
 // A terminated employee, read only. There is nothing to edit or reinstate.
 export default function ViewEmployeeModal({ employee, meta, onClose }) {
+  useReturnFocus()
   const title = (
     <Group gap="sm" wrap="nowrap" component="span">
       <Avatar size={40} radius="xl" color="gray" fw={700}>

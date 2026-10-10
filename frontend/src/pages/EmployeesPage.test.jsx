@@ -97,6 +97,9 @@ describe('EmployeesPage', () => {
     expect(await screen.findByText('9,412')).toBeInTheDocument()
     expect(await screen.findByText('588')).toBeInTheDocument()
     expect(screen.getByText('1–1 of 1')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Previous page' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Next page' })).toBeInTheDocument()
+    expect(document.title).toBe('Employees · ACME Salary')
   })
 
   it('applies filters from the URL and shows them as removable chips', async () => {
@@ -264,6 +267,34 @@ describe('EmployeesPage', () => {
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
       expect(employeesApi.terminateEmployee).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('keyboard focus', () => {
+    it('starts in Full name and returns to the Edit button when the modal closes', async () => {
+      renderList()
+      await screen.findByText('Priya Raman')
+      const editButton = screen.getByRole('button', { name: 'Edit Priya Raman' })
+
+      await userEvent.click(editButton)
+      const dialog = await screen.findByRole('dialog')
+      await waitFor(() => expect(within(dialog).getByLabelText('Full name')).toHaveFocus())
+
+      await userEvent.keyboard('{Escape}')
+
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+      expect(editButton).toHaveFocus()
+    })
+
+    it('opens the terminate dialog on Keep employee, not Terminate', async () => {
+      renderList()
+      await screen.findByText('Priya Raman')
+      await userEvent.click(screen.getByRole('button', { name: 'Edit Priya Raman' }))
+      await userEvent.click(await screen.findByRole('button', { name: 'Terminate…' }))
+
+      const confirm = await screen.findByRole('dialog', { name: /Terminate Priya Raman\?/ })
+
+      await waitFor(() => expect(within(confirm).getByRole('button', { name: 'Keep employee' })).toHaveFocus())
     })
   })
 })

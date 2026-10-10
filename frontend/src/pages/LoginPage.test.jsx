@@ -57,4 +57,16 @@ describe('LoginPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t reach the server')
   })
+
+  it('fills in the demo account so a demo user can sign in with one click', async () => {
+    authApi.login.mockResolvedValue({ token: 'Bearer abc123', email: 'hr1@acme.test' })
+    renderLogin()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Use demo account' }))
+
+    expect(screen.getByLabelText('Email')).toHaveValue('hr1@acme.test')
+    expect(screen.getByLabelText('Password')).toHaveValue('password123')
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    expect(authApi.login).toHaveBeenCalledWith('hr1@acme.test', 'password123')
+  })
 })

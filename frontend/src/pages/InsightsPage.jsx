@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDocumentTitle } from '@mantine/hooks'
 import { Alert, Avatar, Box, Button, Group, Modal, Paper, SimpleGrid, Skeleton, Stack, Table, Text, Title, Tooltip, UnstyledButton } from '@mantine/core'
 import EmployeeFormModal from '../components/EmployeeFormModal.jsx'
 import { formatCompactSalary, formatCount, formatSalary, initialsFromName, labelFor } from '../format.js'
@@ -56,6 +57,7 @@ function EditById({ id, meta, onClose }) {
 }
 
 export default function InsightsPage() {
+  useDocumentTitle('Insights · ACME Salary')
   const { data: meta } = useMeta()
   const insights = useCountryInsights()
   const [editingId, setEditingId] = useState(null)

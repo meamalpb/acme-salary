@@ -13,6 +13,7 @@ import {
   valuesFrom,
 } from '../employeeForm.js'
 import { initialsFromName } from '../format.js'
+import { useReturnFocus } from '../hooks/useReturnFocus.js'
 import { useSaveEmployee } from '../hooks/useSaveEmployee.js'
 import TerminateConfirmModal from './TerminateConfirmModal.jsx'
 
@@ -23,6 +24,7 @@ function plural(count, word) {
 // Add (employee is null) or edit an employee. The server stays the source of truth:
 // its field errors are shown under the matching fields.
 export default function EmployeeFormModal({ employee, meta, onClose }) {
+  useReturnFocus()
   const isEdit = Boolean(employee)
   const original = employee
   const form = useForm({ initialValues: isEdit ? valuesFrom(employee) : blankValues() })
@@ -111,7 +113,7 @@ export default function EmployeeFormModal({ employee, meta, onClose }) {
                   {alert.message}
                 </Alert>
               )}
-              <TextInput label="Full name" placeholder="e.g. Jane Smith" {...fieldProps('full_name')} />
+              <TextInput label="Full name" placeholder="e.g. Jane Smith" data-autofocus {...fieldProps('full_name')} />
               <TextInput label="Email" type="email" placeholder="name@acme.com" {...fieldProps('email')} />
               <SimpleGrid cols={2} spacing="sm">
                 <TextInput label="Job title" placeholder="e.g. Senior Engineer" {...fieldProps('job_title')} />
@@ -123,7 +125,12 @@ export default function EmployeeFormModal({ employee, meta, onClose }) {
                 <SegmentedControl fullWidth data={meta?.levels ?? []} {...form.getInputProps('level')} />
               </Input.Wrapper>
               <Input.Wrapper label="Gender" error={form.errors.gender}>
-                <SegmentedControl fullWidth data={meta?.genders ?? []} {...form.getInputProps('gender')} />
+                <SegmentedControl
+                  fullWidth
+                  data={meta?.genders ?? []}
+                  styles={{ label: { whiteSpace: 'normal', lineHeight: 1.25 } }}
+                  {...form.getInputProps('gender')}
+                />
               </Input.Wrapper>
               <Box>
                 <TextInput

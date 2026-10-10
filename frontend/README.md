@@ -27,12 +27,23 @@ Where the designs and the backend differ, the backend and [docs/decisions.md](..
 
 ```sh
 npm install
+cp .env.example .env.local   # VITE_API_URL, defaults to http://localhost:3000 (gitignored)
 ```
 
 ## Run
 
+Start the backend first (see [backend/README.md](../backend/README.md)), then:
+
 ```sh
 npm run dev      # http://localhost:5173
 npm run build
+```
+
+Sign in with a seeded HR user, e.g. `hr1@acme.test` / `password123`.
+
+## Test and lint
+
+```sh
+npm test         # Vitest + React Testing Library, no network or backend needed
 npm run lint
 ```

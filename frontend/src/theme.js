@@ -12,3 +12,9 @@ export const theme = createTheme({
   },
   defaultRadius: 'md',
 })
+
+// Mantine's default "dimmed" grey (#868E96) is about 3.3:1 on white, below WCAG AA.
+// The design's caption grey is about 5.9:1.
+export function cssVariablesResolver() {
+  return { variables: {}, light: { '--mantine-color-dimmed': '#5F6770' }, dark: {} }
+}

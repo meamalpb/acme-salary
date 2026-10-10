@@ -9,7 +9,7 @@ import '@mantine/notifications/styles.css'
 import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './auth/AuthProvider.jsx'
-import { theme } from './theme.js'
+import { cssVariablesResolver, theme } from './theme.js'
 
 // Retry once for an unreachable server or a 5xx. A 4xx will not change on retry.
 const queryClient = new QueryClient({
@@ -20,7 +20,7 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <MantineProvider theme={theme}>
+    <MantineProvider theme={theme} cssVariablesResolver={cssVariablesResolver}>
       <Notifications />
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>

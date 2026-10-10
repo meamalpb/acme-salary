@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Alert, Box, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Box, Button, Group, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useForm } from '@mantine/form'
+import { useDocumentTitle } from '@mantine/hooks'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/context.js'
 
@@ -9,7 +10,17 @@ function errorMessage(error) {
   return error.message || 'Something went wrong. Try again.'
 }
 
+// The account offered on the sign in page for demos. A build shows it only when VITE_DEMO_EMAIL and
+// VITE_DEMO_PASSWORD are set; in development it falls back to the seed script's first HR user.
+function demoAccount() {
+  const env = import.meta.env
+  if (env.VITE_DEMO_EMAIL && env.VITE_DEMO_PASSWORD) return { email: env.VITE_DEMO_EMAIL, password: env.VITE_DEMO_PASSWORD }
+  if (env.DEV) return { email: 'hr1@acme.test', password: 'password123' }
+  return null
+}
+
 export default function LoginPage() {
+  useDocumentTitle('Sign in · ACME Salary')
   const { isSignedIn, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -24,6 +35,7 @@ export default function LoginPage() {
   })
 
   if (isSignedIn) return <Navigate to="/employees" replace />
+  const demo = demoAccount()
 
   async function handleSubmit({ email, password }) {
     setError(null)
@@ -72,6 +84,30 @@ export default function LoginPage() {
             </Button>
           </Stack>
         </Paper>
+        {demo && (
+          <Paper withBorder radius="lg" p="md" bg="brand.0">
+            <Group justify="space-between" wrap="nowrap" gap="sm">
+              <Box>
+                <Text size="sm" fw={600}>
+                  Demo account
+                </Text>
+                <Text size="sm" c="dimmed">
+                  {demo.email} · {demo.password}
+                </Text>
+              </Box>
+              <Button
+                variant="light"
+                size="xs"
+                onClick={() => {
+                  form.setValues(demo)
+                  setError(null)
+                }}
+              >
+                Use demo account
+              </Button>
+            </Group>
+          </Paper>
+        )}
         <Text size="sm" c="dimmed" ta="center">
           No account? Ask your administrator — accounts aren’t self-service.
         </Text>

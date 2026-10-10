@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Box, Button, Group, Pagination, Paper, Select, Stack, Text, Title } from '@mantine/core'
+import { useDocumentTitle } from '@mantine/hooks'
+import { Button, Group, Pagination, Paper, Select, Stack, Text, Title } from '@mantine/core'
 import ExportButton from '../components/ExportButton.jsx'
 import EmployeeFormModal from '../components/EmployeeFormModal.jsx'
 import EmployeeFilters from '../components/EmployeeFilters.jsx'
@@ -13,6 +14,7 @@ import { useMeta } from '../hooks/useMeta.js'
 // The Active list and the Terminated list share everything but a few columns and actions.
 export default function EmployeesPage({ status = 'active' }) {
   const terminated = status === 'terminated'
+  useDocumentTitle(terminated ? 'Terminated employees · ACME Salary' : 'Employees · ACME Salary')
   const { params, update, clearFilters } = useEmployeeListParams(status)
   const { data: meta } = useMeta()
   const list = useEmployees(params, status)
@@ -33,14 +35,14 @@ export default function EmployeesPage({ status = 'active' }) {
   }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="flex-end">
-        <Box>
+    <Stack gap="sm" style={{ flex: '1 1 0px', minHeight: 0 }}>
+      <Group justify="space-between" align="center">
+        <Group gap="sm" align="baseline">
           <Title order={1} fz={26}>
             Employees
           </Title>
           <Text c="dimmed">{terminated ? 'Terminated records are read-only and not counted in insights' : 'Salaries in USD'}</Text>
-        </Box>
+        </Group>
         <Group gap="sm">
           <ExportButton params={filterParams(params, status)} count={listMeta?.total_count} />
           {!terminated && <Button onClick={() => setSelected('new')}>Add employee</Button>}
@@ -49,7 +51,15 @@ export default function EmployeesPage({ status = 'active' }) {
 
       <StatusTabs activeCount={activeCount.data} terminatedCount={terminatedCount.data} />
 
-      <Paper withBorder radius="lg" shadow="xs" style={{ overflow: 'hidden' }}>
+      {/* As tall as its rows, but never taller than the window: when space runs out it shrinks and the
+          rows scroll inside it. On very short windows it keeps a minimum height and the page scrolls. */}
+      <Paper
+        withBorder
+        radius="lg"
+        shadow="xs"
+        display="flex"
+        style={{ flex: '0 1 auto', minHeight: 360, flexDirection: 'column', overflow: 'hidden' }}
+      >
         <EmployeeFilters params={params} meta={meta} showLevel={!terminated} onChange={update} onClear={clearFilters} />
         <EmployeeTable
           rows={rows}
@@ -66,6 +76,7 @@ export default function EmployeesPage({ status = 'active' }) {
           onRetry={() => list.refetch()}
           onClearFilters={clearFilters}
           onOpen={setSelected}
+          scrollResetKey={JSON.stringify(params)}
         />
         {list.isPending && (
           <Text role="status" c="dimmed" p="md">
@@ -73,7 +84,7 @@ export default function EmployeesPage({ status = 'active' }) {
           </Text>
         )}
         {listMeta && (
-          <Group justify="space-between" p="md">
+          <Group justify="space-between" p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
             <Group gap="md">
               <Text c="gray.7">
                 {rows.length ? `${formatCount(rangeStart)}–${formatCount(rangeStart + rows.length - 1)}` : '0'} of{' '}
@@ -88,7 +99,13 @@ export default function EmployeesPage({ status = 'active' }) {
                 w={120}
               />
             </Group>
-            <Pagination total={listMeta.total_pages} value={params.page} onChange={(page) => update({ page })} />
+            <Pagination
+              total={listMeta.total_pages}
+              value={params.page}
+              onChange={(page) => update({ page })}
+              getControlProps={(control) => ({ 'aria-label': `${control[0].toUpperCase()}${control.slice(1)} page` })}
+              getItemProps={(page) => ({ 'aria-label': `Page ${page}`, 'aria-current': page === params.page ? 'page' : undefined })}
+            />
           </Group>
         )}
       </Paper>

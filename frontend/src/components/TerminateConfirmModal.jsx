@@ -2,6 +2,7 @@ import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { todayISO } from '../employeeForm.js'
 import { formatDate, labelFor } from '../format.js'
+import { useReturnFocus } from '../hooks/useReturnFocus.js'
 import { useTerminateEmployee } from '../hooks/useTerminateEmployee.js'
 
 // Why the server said no, in words for the HR manager.
@@ -12,6 +13,7 @@ function failureMessage(error) {
 }
 
 export default function TerminateConfirmModal({ employee, meta, onCancel, onTerminated }) {
+  useReturnFocus()
   const terminate = useTerminateEmployee()
 
   function handleTerminate() {
@@ -51,7 +53,8 @@ export default function TerminateConfirmModal({ employee, meta, onCancel, onTerm
           Termination date will be recorded as today, <strong>{formatDate(todayISO())}</strong>.
         </Text>
         <Group justify="flex-end" gap="sm" mt="xs">
-          <Button variant="default" onClick={onCancel} disabled={terminate.isPending}>
+          {/* Focused first so Enter can't terminate by accident. */}
+          <Button variant="default" onClick={onCancel} disabled={terminate.isPending} data-autofocus>
             Keep employee
           </Button>
           <Button color="red" loading={terminate.isPending} onClick={handleTerminate}>

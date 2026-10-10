@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { ActionIcon, Alert, Avatar, Badge, Box, Button, Group, Skeleton, Stack, Table, Text, UnstyledButton } from '@mantine/core'
 import { formatDate, formatSalary, initialsFromName, labelFor } from '../format.js'
 
@@ -61,10 +62,27 @@ export default function EmployeeTable({
   onRetry,
   onClearFilters,
   onOpen,
+  scrollResetKey,
 }) {
+  // A new page, filter or sort starts at the top row.
+  const scrollRef = useRef(null)
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [scrollResetKey])
+
   return (
-    <Table.ScrollContainer minWidth={960}>
-      <Table verticalSpacing="xs" horizontalSpacing="md" striped aria-busy={isLoading || isRefreshing} opacity={isRefreshing ? 0.6 : 1}>
+    // Scrolls both ways inside the card: rows vertically under the pinned column headers, and the
+    // whole table sideways on narrow screens.
+    <Box ref={scrollRef} style={{ flex: '0 1 auto', minHeight: 0, overflow: 'auto' }}>
+      <Table
+        miw={960}
+        stickyHeader
+        verticalSpacing="xs"
+        horizontalSpacing="md"
+        striped
+        aria-busy={isLoading || isRefreshing}
+        opacity={isRefreshing ? 0.6 : 1}
+      >
         <Table.Thead>
           <Table.Tr>
             <SortableHeader label="Employee" column="full_name" sort={sort} direction={direction} onSort={onSort} />
@@ -179,6 +197,6 @@ export default function EmployeeTable({
           ))}
         </Table.Tbody>
       </Table>
-    </Table.ScrollContainer>
+    </Box>
   )
 }
