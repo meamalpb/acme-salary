@@ -9,6 +9,15 @@ class CreateEmployee
     new(attributes).call
   end
 
+  # Highest code number in use. Terminated employees count too, so a code is never reused.
+  def self.last_code_number
+    Employee.with_deleted.maximum(CODE_NUMBER_SQL).to_i
+  end
+
+  def self.code_for(number)
+    format("#{CODE_PREFIX}%05d", number)
+  end
+
   def initialize(attributes)
     @attributes = attributes.to_h.symbolize_keys.except(:employee_code)
   end
@@ -30,9 +39,7 @@ class CreateEmployee
 
   private
 
-  # Terminated employees count too, so a code is never reused.
   def next_code
-    last = Employee.with_deleted.maximum(CODE_NUMBER_SQL).to_i
-    format("#{CODE_PREFIX}%05d", last + 1)
+    self.class.code_for(self.class.last_code_number + 1)
   end
 end

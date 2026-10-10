@@ -37,6 +37,14 @@ RSpec.describe Employee, type: :model do
         expect(duplicate.errors[:email]).to include("has already been taken")
       end
 
+      it "is unique across terminated employees too" do
+        create(:employee, email: "priya@acme.test").update_columns(deleted_at: Time.zone.local(2026, 9, 1))
+        duplicate = build(:employee, email: "priya@acme.test")
+
+        expect(duplicate).not_to be_valid
+        expect(duplicate.errors[:email]).to include("has already been taken")
+      end
+
       it "is stored lowercase and stripped" do
         employee = create(:employee, email: "  Priya@Acme.Test ")
 
@@ -47,6 +55,14 @@ RSpec.describe Employee, type: :model do
     describe "employee_code" do
       it "is unique" do
         create(:employee, employee_code: "EMP-00001")
+        duplicate = build(:employee, employee_code: "EMP-00001")
+
+        expect(duplicate).not_to be_valid
+        expect(duplicate.errors[:employee_code]).to include("has already been taken")
+      end
+
+      it "is unique across terminated employees too" do
+        create(:employee, employee_code: "EMP-00001").update_columns(deleted_at: Time.zone.local(2026, 9, 1))
         duplicate = build(:employee, employee_code: "EMP-00001")
 
         expect(duplicate).not_to be_valid

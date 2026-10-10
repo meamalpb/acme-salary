@@ -54,11 +54,12 @@ class Employee < ApplicationRecord
 
   before_validation :normalize_email
 
+  # Uniqueness checks include terminated rows, matching the unique indexes; the default scope would hide them.
   validates :employee_code, :full_name, :job_title, :hire_date, presence: true
-  validates :employee_code, uniqueness: true
+  validates :employee_code, uniqueness: { conditions: -> { with_deleted } }
   validates :email, presence: true,
                     format: { with: URI::MailTo::EMAIL_REGEXP, allow_blank: true },
-                    uniqueness: true
+                    uniqueness: { conditions: -> { with_deleted } }
   validates :salary, presence: true,
                      numericality: { only_integer: true, greater_than: 0, allow_nil: true }
   validate :hire_date_not_in_future
