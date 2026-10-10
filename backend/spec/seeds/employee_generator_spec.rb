@@ -12,6 +12,10 @@ RSpec.describe EmployeeGenerator do
     rows.count { |row| row[key] == value }.fdiv(rows.size)
   end
 
+  def faker_names(locale, key)
+    I18n.t("faker.name.#{key}", locale: locale)
+  end
+
   describe ".salary" do
     let(:rng) { Random.new(1) }
 
@@ -66,6 +70,44 @@ RSpec.describe EmployeeGenerator do
       expect(rows.last[:employee_code]).to eq("EMP-02000")
       expect(rows.map { |row| row[:employee_code] }.uniq.size).to eq(rows.size)
       expect(rows.map { |row| row[:email] }.uniq.size).to eq(rows.size)
+    end
+
+    it "gives most employees a distinct name" do
+      rows = generate
+
+      expect(rows.map { |row| row[:full_name] }.uniq.size.fdiv(rows.size)).to be > 0.9
+    end
+
+    it "takes German names from the de locale, first names by gender" do
+      germans = generate.select { |row| row[:country] == "germany" }
+      women = germans.select { |row| row[:gender] == "female" }
+
+      expect(women).not_to be_empty
+      women.each do |row|
+        expect(faker_names(:de, :female_first_name)).to include(row[:full_name].split.first)
+      end
+      germans.each do |row|
+        expect(faker_names(:de, :last_name).any? { |name| row[:full_name].end_with?(" #{name}") }).to be(true), row[:full_name]
+      end
+    end
+
+    it "gives Indian employees Indian last names" do
+      indians = generate.select { |row| row[:country] == "india" }
+
+      expect(indians).not_to be_empty
+      indians.each do |row|
+        expect(faker_names(:"en-IND", :last_name).any? { |name| row[:full_name].end_with?(" #{name}") }).to be(true), row[:full_name]
+      end
+    end
+
+    it "leaves Faker's locale and random as it found them" do
+      locale = Faker::Config.locale
+      random = Faker::Config.random
+
+      generate(count: 50)
+
+      expect(Faker::Config.locale).to eq(locale)
+      expect(Faker::Config.random).to be(random)
     end
 
     it "produces rows the Employee model accepts" do

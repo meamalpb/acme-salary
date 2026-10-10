@@ -39,6 +39,9 @@ gem "devise", "~> 5.0"
 
 gem "devise-jwt", "~> 0.13"
 
+# Names for db/seeds (seeds also run in production, so not dev/test only); required by the generator, not at boot
+gem "faker", "~> 3.8", require: false
+
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 gem "rack-cors"
 

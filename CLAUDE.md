@@ -15,6 +15,7 @@ ACME Salary is employee salary management for an HR manager (~10,000 employees, 
 - Soft delete: paranoia (`deleted_at` = termination date)
 - Pagination: kaminari
 - Serialization: Alba
+- Seed names: faker (default group, `require: false`, since seeds also run in production)
 - Tests: RSpec + FactoryBot + shoulda-matchers
 - Lint: rubocop-rails-omakase
 

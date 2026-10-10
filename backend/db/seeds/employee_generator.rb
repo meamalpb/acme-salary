@@ -1,6 +1,10 @@
+require "faker"
+
 # Builds deterministic, realistic employee rows for db/seeds.rb (not autoloaded; seeds.rb requires it).
 # salary = level base × country multiplier × random(0.85..1.15), rounded to the nearest 100.
-# Everything random comes from one Random seeded in the constructor, so a run is repeatable.
+# Names come from Faker's locale for the employee's country.
+# Everything random, Faker included, comes from one Random seeded in the constructor, so a run is repeatable
+# (for a given Faker version: its name lists are part of the output).
 # Dates are relative to a fixed reference date (not today), which keeps output identical across days.
 class EmployeeGenerator
   REFERENCE_DATE = Date.new(2026, 10, 1)
@@ -34,20 +38,6 @@ class EmployeeGenerator
   }.freeze
 
   GENDER_SHARE = { "female" => 0.47, "male" => 0.47, "non_binary" => 0.03, "prefer_not_to_say" => 0.03 }.freeze
-  FEMALE_NAMES = %w[
-    Priya Anika Meera Sara Emily Olivia Hannah Chloe Sofia Isabella Mei Aisha Fatima Elena Grace
-    Lakshmi Ananya Zoe Amelia Charlotte Maya Nora Leila Julia Camila
-  ].freeze
-  MALE_NAMES = %w[
-    Arjun Rahul Vikram Daniel Michael James Oliver Lucas Noah Liam Wei Omar Ahmed Mateus Hans
-    Rohan Kabir Ethan Henry Jack Samuel Mohammed Pedro Felix Andre
-  ].freeze
-  LAST_NAMES = %w[
-    Sharma Patel Singh Kumar Gupta Reddy Nair Iyer Smith Johnson Williams Brown Jones Miller Davis Wilson
-    Taylor Clark Anderson Thomas Martin Lee Wong Tan Chen Lim Müller Schmidt Weber Fischer Silva Santos
-    Oliveira Costa Pereira Murphy Kelly Walsh Campbell Stewart Nguyen Khan Ali Hassan Rossi Novak Fraser
-    Hughes Bennett Cooper
-  ].freeze
   EMAIL_DOMAIN = "acme.test".freeze
 
   # Public so the pay formula can be tested on its own.
@@ -62,19 +52,23 @@ class EmployeeGenerator
     @used_emails = Set.new
   end
 
+  # Faker's random is global (per thread), so it's pointed at @rng only for the duration of the run.
   def call
+    previous_random = Faker::Config.random
+    Faker::Config.random = @rng
     Array.new(@count) { |index| build_row(index + 1) }
+  ensure
+    Faker::Config.random = previous_random
   end
 
   private
 
   def build_row(number)
     gender = pick(GENDER_SHARE)
-    first_name = first_name_for(gender)
-    last_name = LAST_NAMES.fetch(@rng.rand(LAST_NAMES.size))
     department = pick(DEPARTMENT_SHARE)
     level = pick(LEVEL_SHARE)
     country = pick(COUNTRY_SHARE)
+    first_name, last_name = name_for(gender, country)
     hire_date = random_hire_date
 
     {
@@ -102,13 +96,13 @@ class EmployeeGenerator
     shares.keys.last
   end
 
-  def first_name_for(gender)
-    pool = case gender
-    when "female" then FEMALE_NAMES
-    when "male" then MALE_NAMES
-    else FEMALE_NAMES + MALE_NAMES
-    end
-    pool.fetch(@rng.rand(pool.size))
+  def name_for(gender, country)
+      first_name = case gender
+      when "female" then Faker::Name.female_first_name
+      when "male" then Faker::Name.male_first_name
+      else Faker::Name.first_name
+      end
+     [ first_name, Faker::Name.last_name ]
   end
 
   # first.last@acme.test, with a counter added when that address is already taken.
