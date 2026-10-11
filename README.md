@@ -4,6 +4,12 @@ Web-based salary management for ACME's HR team. It replaces the Excel sheets use
 
 v1 covers sign in, the employee list (search, filters, sort, paging, all kept in the URL), add and edit, terminate, a read-only Terminated list, CSV export, and per-country insights (median salary, total payroll, top earner). Scope is in [docs/requirements.md](docs/requirements.md) and the reasoning behind each choice is in [docs/decisions.md](docs/decisions.md).
 
+## Live demo
+
+- Frontend: https://acme-salary.pages.dev
+- Backend API: https://acme-salary-pwrf.onrender.com (the free tier sleeps when idle, so an uptime monitor pings it to keep it awake; the first request after a restart can still take up to a minute)
+- Uptime status: https://stats.uptimerobot.com/sp7z6BHeFB
+
 ## Stack
 
 | Layer    | Tech                                   |
