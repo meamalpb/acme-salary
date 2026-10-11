@@ -50,7 +50,7 @@ The migration path from Excel. Reasoning is in decisions #27 to #32.
 - **All or nothing.** If any row is invalid, nothing is imported, and every problem is listed by spreadsheet row number and field, so the file can be fixed and uploaded again.
 - An email that's already in use (including by a terminated employee) or repeated within the file is a row error.
 - Columns use the export's names, matched loosely (case, spaces, Excel's byte order mark), and other columns are ignored. Fixed-list cells accept the value or the label (`united_states` or `United States`). Dates must be `YYYY-MM-DD`. Salaries are whole US dollars.
-- A file holds at most 10,000 rows and 5 MB, and must be UTF-8 ("CSV UTF-8" in Excel's Save As).
+- A file holds at most 10,000 rows and 5 MB, and must be UTF-8 ("CSV UTF-8" in Excel's Save As). On the hosted demo (Render free tier) the practical limit is about 5,000 rows, because larger imports run out of memory (see decisions #34).
 - The import runs in the **background**. Problems with the file as a whole are reported straight away. Row errors are available once the import has run, and the frontend checks for them by polling.
 
 ## Deliberately out of scope

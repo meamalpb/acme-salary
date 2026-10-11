@@ -340,4 +340,5 @@ v2:
 - **Downloading the CSV** needs the auth header, so the frontend fetches it as a blob rather than using a plain link.
 - **Uploading an import** is a `FormData` POST with the auth header, followed by polling (2.6).
 - **Background jobs:** development uses Active Job's in-process `:async` adapter, so a job still queued when the server restarts is lost, and its import stays `queued`. Production uses solid_queue, which needs a worker running: `bin/jobs`, or `SOLID_QUEUE_IN_PUMA=1` to run it inside Puma.
+- **Import memory:** `ImportEmployeesCsv` parses and validates every row in memory before one transaction inserts them, so memory grows with file size. On the Render free tier an import of more than about 5,000 rows runs out of memory and does not complete, even though the code allows 10,000 (`MAX_ROWS`). See decisions #34.
 - **A worker that dies mid-import** writes nothing, because the insert is one transaction, but it can leave the import `processing`. If that matters in practice, a sweeper can mark stale imports `failed`.
