@@ -22,6 +22,9 @@ Rails.application.routes.draw do
       end
 
       resources :employee_imports, only: %i[create show]
+
+      post "demo/seed", to: "demo#seed"
+      delete "demo/employees", to: "demo#destroy_employees"
     end
   end
 end
